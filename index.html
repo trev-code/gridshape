@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fretboard Scale Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fretboard Scale Visualizer</h1>
+            <p class="subtitle">Visualize scales and modes on any stringed instrument</p>
+        </header>
+        
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <div class="control-group">
+                <label for="instrument-select">Instrument:</label>
+                <select id="instrument-select" class="control-select"></select>
+            </div>
+            
+            <div class="control-group">
+                <label for="key-select">Key:</label>
+                <select id="key-select" class="control-select"></select>
+            </div>
+            
+            <div class="control-group">
+                <label for="scale-select">Scale/Mode:</label>
+                <select id="scale-select" class="control-select"></select>
+            </div>
+        </div>
+        
+        <!-- Settings Bar -->
+        <div class="settings-bar">
+            <button class="settings-toggle" id="settings-toggle">⚙️ Settings</button>
+            <div class="settings-panel" id="settings-panel" style="display: none;">
+                <h3>Settings</h3>
+                <div class="settings-group">
+                    <label>Visual Style:</label>
+                    <div class="button-group">
+                        <button class="version-btn" data-version="1">Classic</button>
+                        <button class="version-btn" data-version="2">Colorful</button>
+                        <button class="version-btn active" data-version="3">Minimal</button>
+                        <button class="version-btn" data-version="4">Bold</button>
+                        <button class="version-btn" data-version="5">Circular</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Features:</label>
+                    <div class="feature-toggles">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggle-scale" checked>
+                            <span>Scale Highlighting</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggle-chords">
+                            <span>Chord Overlay</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggle-intervals">
+                            <span>Interval Highlighting</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggle-patterns">
+                            <span>Scale Patterns</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggle-frequency">
+                            <span>Note Frequency</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Chord Selection:</label>
+                    <select id="chord-select" class="control-select">
+                        <option value="">None</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Circle Visualizations -->
+        <div class="circle-section">
+            <div class="circle-controls">
+                <button class="circle-toggle" id="toggle-circle-fifths">Show Circle of Fifths</button>
+                <button class="circle-toggle" id="toggle-chromatic">Show Chromatic Circle</button>
+            </div>
+            <div class="circles-container">
+                <div id="circle-of-fifths" class="circle-container" style="display: none;"></div>
+                <div id="chromatic-circle" class="circle-container" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Tuning Editor -->
+        <div class="tuning-section">
+            <button class="tuning-toggle" id="toggle-tuning-editor">Custom Tuning Editor</button>
+            <div id="tuning-editor-container" style="display: none;"></div>
+        </div>
+
+        <!-- Fretboard Container -->
+        <div class="fretboard-container">
+            <div id="fretboard" class="fretboard version-3"></div>
+        </div>
+    </div>
+
+    <!-- Load modules in order -->
+    <script src="scales.js"></script>
+    <script src="instruments.js"></script>
+    <script src="visualization.js"></script>
+    <script src="circle-of-fifths.js"></script>
+    <script src="chords.js"></script>
+    <script src="intervals.js"></script>
+    <script src="patterns.js"></script>
+    <script src="frequency.js"></script>
+    <script src="tuning-editor.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
