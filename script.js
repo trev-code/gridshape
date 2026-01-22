@@ -1,16 +1,48 @@
 // Main Fretboard Visualizer - Integrates all modules
 class FretboardVisualizer {
     constructor() {
-        this.instrumentManager = new InstrumentManager();
-        this.scaleManager = new ScaleManager();
-        this.scaleVisualizer = new ScaleVisualizer();
-        this.circleVisualizer = new CircleVisualizer();
-        this.chordVisualizer = new ChordVisualizer(this.scaleManager);
-        this.intervalVisualizer = new IntervalVisualizer(this.scaleManager);
-        this.patternVisualizer = new PatternVisualizer(this.scaleManager, this.instrumentManager);
-        this.frequencyVisualizer = new FrequencyVisualizer(this.scaleManager, this.instrumentManager);
-        this.tuningEditor = new TuningEditor(this.instrumentManager);
-        this.noteInteractionManager = new NoteInteractionManager(this.scaleManager, this.instrumentManager, this.intervalVisualizer);
+        try {
+            // Check if all required classes are available
+            const requiredClasses = {
+                'InstrumentManager': typeof InstrumentManager !== 'undefined' ? InstrumentManager : undefined,
+                'ScaleManager': typeof ScaleManager !== 'undefined' ? ScaleManager : undefined,
+                'ScaleVisualizer': typeof ScaleVisualizer !== 'undefined' ? ScaleVisualizer : undefined,
+                'CircleVisualizer': typeof CircleVisualizer !== 'undefined' ? CircleVisualizer : undefined,
+                'ChordVisualizer': typeof ChordVisualizer !== 'undefined' ? ChordVisualizer : undefined,
+                'IntervalVisualizer': typeof IntervalVisualizer !== 'undefined' ? IntervalVisualizer : undefined,
+                'PatternVisualizer': typeof PatternVisualizer !== 'undefined' ? PatternVisualizer : undefined,
+                'FrequencyVisualizer': typeof FrequencyVisualizer !== 'undefined' ? FrequencyVisualizer : undefined,
+                'TuningEditor': typeof TuningEditor !== 'undefined' ? TuningEditor : undefined,
+                'NoteInteractionManager': typeof NoteInteractionManager !== 'undefined' ? NoteInteractionManager : undefined,
+                'TriadVisualizer': typeof TriadVisualizer !== 'undefined' ? TriadVisualizer : undefined,
+                'LegendManager': typeof LegendManager !== 'undefined' ? LegendManager : undefined
+            };
+            
+            const missingClasses = [];
+            for (const [name, Class] of Object.entries(requiredClasses)) {
+                if (typeof Class === 'undefined') {
+                    missingClasses.push(name);
+                }
+            }
+            
+            if (missingClasses.length > 0) {
+                const errorMsg = `Missing required classes: ${missingClasses.join(', ')}. Make sure all script files are loaded in the correct order.`;
+                console.error('Class availability check:', requiredClasses);
+                throw new Error(errorMsg);
+            }
+            
+            this.instrumentManager = new InstrumentManager();
+            this.scaleManager = new ScaleManager();
+            this.scaleVisualizer = new ScaleVisualizer();
+            this.circleVisualizer = new CircleVisualizer();
+            this.chordVisualizer = new ChordVisualizer(this.scaleManager);
+            this.intervalVisualizer = new IntervalVisualizer(this.scaleManager);
+            this.patternVisualizer = new PatternVisualizer(this.scaleManager, this.instrumentManager);
+            this.frequencyVisualizer = new FrequencyVisualizer(this.scaleManager, this.instrumentManager);
+            this.tuningEditor = new TuningEditor(this.instrumentManager);
+            this.noteInteractionManager = new NoteInteractionManager(this.scaleManager, this.instrumentManager, this.intervalVisualizer);
+            this.triadVisualizer = new TriadVisualizer(this.scaleManager, this.instrumentManager);
+            this.legendManager = new LegendManager();
         
         this.numFrets = 20;
         this.currentVersion = 3;
@@ -25,33 +57,57 @@ class FretboardVisualizer {
             chords: false,
             intervals: false,
             patterns: false,
-            frequency: false
+            frequency: false,
+            triads: false
         };
         
         this.currentChord = null;
+        this.currentTriad = null;
+        this.triadMethod = 'connected';
         
         this.init();
+        } catch (error) {
+            console.error('Error in FretboardVisualizer constructor:', error);
+            throw error;
+        }
     }
     
     init() {
+        try {
+            console.log('Initializing FretboardVisualizer...');
         this.setupControls();
         this.applyColorPalette(); // Apply initial palette
         this.createFretboard();
         this.updateAllVisualizations();
         this.setupTuningEditor();
         this.setupCircleVisualizations();
+        this.legendManager.init();
+        this.updateLegend();
+        console.log('FretboardVisualizer initialized successfully');
+        } catch (error) {
+            console.error('Error initializing FretboardVisualizer:', error);
+            if (window.debugConsole) {
+                window.debugConsole.addEntry('error', `Initialization error: ${error.message}`);
+            }
+        }
     }
     
     // Setup all UI controls
     setupControls() {
-        this.setupVersionSwitcher();
-        this.setupInstrumentSelector();
-        this.setupKeySelector();
-        this.setupScaleSelector();
-        this.setupFeatureToggles();
-        this.setupChordSelector();
-        this.setupSettingsToggle();
-        this.setupColorPalette();
+        try {
+            console.log('Setting up controls...');
+            this.setupVersionSwitcher();
+            this.setupInstrumentSelector();
+            this.setupKeySelector();
+            this.setupScaleSelector();
+            this.setupFeatureToggles();
+            this.setupChordSelector();
+            this.setupSettingsToggle();
+            this.setupColorPalette();
+            console.log('Controls setup complete');
+        } catch (error) {
+            console.error('Error setting up controls:', error);
+        }
     }
     
     // Setup settings toggle
@@ -60,10 +116,15 @@ class FretboardVisualizer {
         const panel = document.getElementById('settings-panel');
         
         if (toggle && panel) {
-            toggle.addEventListener('click', () => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Settings toggle clicked');
                 const isVisible = panel.style.display !== 'none';
                 panel.style.display = isVisible ? 'none' : 'block';
             });
+        } else {
+            console.warn('Settings toggle or panel not found');
         }
     }
     
@@ -88,8 +149,12 @@ class FretboardVisualizer {
     // Setup version switcher (visual style)
     setupVersionSwitcher() {
         const buttons = document.querySelectorAll('.version-btn');
+        console.log(`Found ${buttons.length} version buttons`);
         buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                console.log('Version button clicked:', btn.getAttribute('data-version'));
+                e.preventDefault();
+                e.stopPropagation();
                 buttons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentVersion = parseInt(btn.getAttribute('data-version'));
@@ -166,6 +231,7 @@ class FretboardVisualizer {
             this.currentKey = e.target.value;
             this.updateAllVisualizations();
             this.updateChordSelector();
+            this.updateTriadSelector();
         });
     }
     
@@ -189,6 +255,7 @@ class FretboardVisualizer {
             this.currentScale = e.target.value;
             this.updateAllVisualizations();
             this.updateChordSelector();
+            this.updateTriadSelector();
         });
     }
     
@@ -199,7 +266,8 @@ class FretboardVisualizer {
             'toggle-chords': 'chords',
             'toggle-intervals': 'intervals',
             'toggle-patterns': 'patterns',
-            'toggle-frequency': 'frequency'
+            'toggle-frequency': 'frequency',
+            'toggle-triads': 'triads'
         };
         
         Object.entries(toggles).forEach(([id, feature]) => {
@@ -208,9 +276,58 @@ class FretboardVisualizer {
                 checkbox.checked = this.features[feature];
                 checkbox.addEventListener('change', (e) => {
                     this.features[feature] = e.target.checked;
+                    
+                    // Show/hide triad controls
+                    if (feature === 'triads') {
+                        const triadControls = document.getElementById('triad-controls');
+                        if (triadControls) {
+                            triadControls.style.display = e.target.checked ? 'flex' : 'none';
+                        }
+                    }
+                    
                     this.updateAllVisualizations();
                 });
             }
+        });
+        
+        // Setup triad selector
+        this.setupTriadSelector();
+    }
+    
+    // Setup triad selector
+    setupTriadSelector() {
+        const select = document.getElementById('triad-select');
+        const methodSelect = document.getElementById('triad-method-select');
+        
+        if (select) {
+            this.updateTriadSelector();
+            select.addEventListener('change', (e) => {
+                this.currentTriad = e.target.value;
+                this.updateAllVisualizations();
+            });
+        }
+        
+        if (methodSelect) {
+            methodSelect.addEventListener('change', (e) => {
+                this.triadMethod = e.target.value;
+                this.updateAllVisualizations();
+            });
+        }
+    }
+    
+    // Update triad selector options
+    updateTriadSelector() {
+        const select = document.getElementById('triad-select');
+        if (!select) return;
+        
+        const triads = this.triadVisualizer.getTriadsInScale(this.currentKey, this.currentScale);
+        
+        select.innerHTML = '<option value="">None</option>';
+        triads.forEach(triad => {
+            const option = document.createElement('option');
+            option.value = triad.name;
+            option.textContent = `${triad.name} (${triad.notes.join(' ')}) - Degree ${triad.scaleDegree}`;
+            select.appendChild(option);
         });
     }
     
@@ -312,8 +429,18 @@ class FretboardVisualizer {
     
     // Create the fretboard
     createFretboard() {
+        console.log('Creating fretboard...');
         const fretboard = document.getElementById('fretboard');
-        if (!fretboard) return;
+        if (!fretboard) {
+            console.error('Fretboard element not found!');
+            return;
+        }
+        
+        // Remove loading message if present
+        const loadingMsg = fretboard.querySelector('#fretboard-loading');
+        if (loadingMsg) {
+            loadingMsg.remove();
+        }
         
         fretboard.innerHTML = '';
         fretboard.className = `fretboard version-${this.currentVersion}`;
@@ -359,6 +486,8 @@ class FretboardVisualizer {
             fretboard.appendChild(stringDiv);
         }
         
+        console.log(`Fretboard created with ${tuning.length} strings and ${this.numFrets + 1} frets`);
+        
         // Setup note interactions after fretboard is created
         this.setupNoteInteractions();
     }
@@ -388,6 +517,7 @@ class FretboardVisualizer {
         this.intervalVisualizer.clearIntervals(fretboard);
         this.patternVisualizer.clearPatterns(fretboard);
         this.frequencyVisualizer.clearFrequency(fretboard);
+        this.triadVisualizer.clearTriads(fretboard);
         
         // Clear note selection
         if (this.noteInteractionManager) {
@@ -431,15 +561,67 @@ class FretboardVisualizer {
             }
         }
         
+        // Apply triad visualization
+        if (this.features.triads && this.currentTriad) {
+            const triads = this.triadVisualizer.getTriadsInScale(this.currentKey, this.currentScale);
+            const triad = triads.find(t => t.name === this.currentTriad);
+            if (triad) {
+                const positions = this.triadVisualizer.findTriadPositions(triad, tuning, this.numFrets, this.triadMethod);
+                if (positions.length > 0 && Array.isArray(positions)) {
+                    // Show first position
+                    this.triadVisualizer.highlightTriad(fretboard, positions[0], this.triadMethod);
+                }
+            }
+        }
+        
         // Update circle highlights
         this.updateCircleHighlights();
         
         // Re-setup note interactions after fretboard update
         this.setupNoteInteractions();
+        
+        // Update legend
+        this.updateLegend();
+    }
+    
+    // Update legend based on active visualizations
+    updateLegend() {
+        const fretboard = document.getElementById('fretboard');
+        if (!fretboard || !this.legendManager) return;
+        
+        const activeClasses = this.legendManager.getActiveClasses(fretboard);
+        this.legendManager.updateLegend(activeClasses);
     }
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    window.fretboardVisualizer = new FretboardVisualizer();
+    console.log('DOM loaded, initializing application...');
+    console.log('Available classes:', {
+        InstrumentManager: typeof InstrumentManager,
+        ScaleManager: typeof ScaleManager,
+        ScaleVisualizer: typeof ScaleVisualizer,
+        CircleVisualizer: typeof CircleVisualizer,
+        ChordVisualizer: typeof ChordVisualizer,
+        IntervalVisualizer: typeof IntervalVisualizer,
+        PatternVisualizer: typeof PatternVisualizer,
+        FrequencyVisualizer: typeof FrequencyVisualizer,
+        TuningEditor: typeof TuningEditor,
+        NoteInteractionManager: typeof NoteInteractionManager,
+        TriadVisualizer: typeof TriadVisualizer,
+        LegendManager: typeof LegendManager
+    });
+    
+    try {
+        window.fretboardVisualizer = new FretboardVisualizer();
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+        console.error('Error stack:', error.stack);
+        if (window.debugConsole) {
+            window.debugConsole.addEntry('error', `Initialization failed: ${error.message}`);
+            window.debugConsole.show();
+        }
+        alert('Error initializing application. Check the browser console (F12) and debug console for details.\n\nError: ' + error.message);
+    }
 });

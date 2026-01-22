@@ -151,17 +151,22 @@ class NoteInteractionManager {
         
         this.infoPanel.style.display = 'block';
         
-        // Use setTimeout to ensure DOM is ready
-        setTimeout(() => {
-            this.setupInfoPanelActions();
-        }, 0);
+        // Setup actions immediately - event delegation handles dynamic content
+        this.setupInfoPanelActions();
     }
     
     // Setup action buttons in info panel using event delegation
     setupInfoPanelActions() {
-        // Use event delegation on the info panel itself
+        // Use event delegation - works with dynamically created content
         if (this.infoPanel) {
-            this.infoPanel.addEventListener('click', (e) => {
+            // Remove old listener if exists
+            const oldHandler = this.infoPanel._actionHandler;
+            if (oldHandler) {
+                this.infoPanel.removeEventListener('click', oldHandler);
+            }
+            
+            // Create new handler
+            const handler = (e) => {
                 const actionBtn = e.target.closest('.action-btn');
                 if (actionBtn) {
                     e.stopPropagation();
@@ -171,7 +176,11 @@ class NoteInteractionManager {
                         this.handleAction(action);
                     }
                 }
-            });
+            };
+            
+            // Store reference and add listener
+            this.infoPanel._actionHandler = handler;
+            this.infoPanel.addEventListener('click', handler);
         }
     }
     
@@ -186,20 +195,46 @@ class NoteInteractionManager {
                 this.highlightNotePositions(fretboard, this.selectedNote);
                 break;
                 
-            case 'show-intervals':
+            case 'show-intervals': {
                 // Toggle interval highlighting for this note
-                const key = window.fretboardVisualizer?.currentKey || 'C';
-                const interval = this.intervalVisualizer.getInterval(key, this.selectedNote);
+                const intervalKey = window.fretboardVisualizer?.currentKey || 'C';
+                const interval = this.intervalVisualizer.getInterval(intervalKey, this.selectedNote);
                 if (interval !== null) {
+                    // Clear previous interval highlights
+                    const allFrets = fretboard.querySelectorAll('.fret');
+                    allFrets.forEach(f => f.classList.remove('interval-highlighted'));
+                    
                     // Highlight all notes with same interval
-                    this.highlightIntervalPositions(fretboard, key, interval);
+                    this.highlightIntervalPositions(fretboard, intervalKey, interval);
+                    
+                    // Update legend
+                    if (window.fretboardVisualizer?.legendManager) {
+                        const activeClasses = window.fretboardVisualizer.legendManager.getActiveClasses(fretboard);
+                        window.fretboardVisualizer.legendManager.updateLegend(activeClasses);
+                    }
                 }
                 break;
+            }
                 
-            case 'find-chords':
+            case 'find-chords': {
                 // Show chords containing this note
                 this.showChordsContainingNote(this.selectedNote);
+                // Also highlight the chord on fretboard if possible
+                const chordKey = window.fretboardVisualizer?.currentKey || 'C';
+                const scale = window.fretboardVisualizer?.currentScale || 'Major (Ionian)';
+                const chords = window.fretboardVisualizer?.chordVisualizer?.getChordsInScale(chordKey, scale) || [];
+                const containingChords = chords.filter(chord => chord.notes.includes(this.selectedNote));
+                if (containingChords.length > 0) {
+                    // Highlight first chord
+                    window.fretboardVisualizer.chordVisualizer.highlightChord(fretboard, containingChords[0].notes, containingChords[0].root);
+                    // Update legend
+                    if (window.fretboardVisualizer?.legendManager) {
+                        const activeClasses = window.fretboardVisualizer.legendManager.getActiveClasses(fretboard);
+                        window.fretboardVisualizer.legendManager.updateLegend(activeClasses);
+                    }
+                }
                 break;
+            }
         }
     }
     

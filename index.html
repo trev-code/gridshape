@@ -81,6 +81,25 @@
                 <input type="checkbox" id="toggle-frequency">
                 <span>Frequency</span>
             </label>
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-triads">
+                <span>Triads</span>
+            </label>
+        </div>
+        
+        <!-- Triad Controls -->
+        <div class="triad-controls-bar" id="triad-controls" style="display: none;">
+            <label for="triad-select" class="triad-label">Triad:</label>
+            <select id="triad-select" class="triad-select">
+                <option value="">None</option>
+            </select>
+            <label for="triad-method-select" class="triad-label">Method:</label>
+            <select id="triad-method-select" class="triad-select">
+                <option value="connected">Connected</option>
+                <option value="close-voicing">Close Voicing</option>
+                <option value="spread">Spread</option>
+                <option value="string-sets">String Sets</option>
+            </select>
         </div>
         
         <!-- Circle Visualizations -->
@@ -103,7 +122,11 @@
 
         <!-- Fretboard Container -->
         <div class="fretboard-container">
-            <div id="fretboard" class="fretboard version-3"></div>
+            <div id="fretboard" class="fretboard version-3">
+                <div id="fretboard-loading" style="padding: 40px; text-align: center; color: #666;">
+                    Loading fretboard...
+                </div>
+            </div>
         </div>
         
         <!-- Chord Selection Bar - Horizontal at bottom -->
@@ -116,6 +139,7 @@
     </div>
 
     <!-- Load modules in order -->
+    <script src="debug-console.js"></script>
     <script src="scales.js"></script>
     <script src="instruments.js"></script>
     <script src="visualization.js"></script>
@@ -126,6 +150,8 @@
     <script src="frequency.js"></script>
     <script src="tuning-editor.js"></script>
     <script src="note-interactions.js"></script>
+    <script src="triads.js"></script>
+    <script src="legend.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
