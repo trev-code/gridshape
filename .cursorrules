@@ -40,3 +40,16 @@ Verify new features work with:
 - Different keys and scales
 - Note click interactions
 - Mobile responsiveness
+
+## Important Notes
+
+> **Note for AI Assistants:** If the time since the last README update is over 20 minutes, please update the README.md file with any new features, changes, or improvements that have been made to the project.
+
+## Fault Tolerance
+
+All new features should include:
+- Try-catch blocks for error handling
+- Null/undefined checks before operations
+- Graceful degradation when features fail
+- Error logging to debug console when available
+- Console warnings for missing dependencies

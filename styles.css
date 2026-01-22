@@ -491,17 +491,24 @@ h1 {
 }
 
 .fretboard-container {
-    overflow: hidden;
-    padding: 10px 0;
+    display: inline-block;
     position: relative;
-    width: 100%;
+    margin: 0 auto;
+    padding: 8px;
+    background: rgba(44, 62, 80, 0.95);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: fit-content;
+    max-width: 100%;
 }
 
 .fretboard {
-    width: 100%;
-    overflow: visible;
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
+    gap: 2px;
+    width: auto;
+    overflow: visible;
 }
 
 /* Triad Connection Lines Overlay - Behind text, in front of note shape */
@@ -525,15 +532,7 @@ h1 {
     z-index: 3; /* Text content in front */
 }
 
-.fretboard {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 2px;
-    background: #2c3e50;
-    padding: 15px;
-    border-radius: 10px;
-    min-width: fit-content;
-}
+/* Background moved to .fretboard-container */
 
 .fretboard-string {
     display: flex;
@@ -994,6 +993,61 @@ h1 {
     transform: scaleY(-1); /* Un-mirror text */
 }
 
+/* Scale Degree Labels */
+.scale-degree-label {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.65em;
+    font-weight: 700;
+    color: #28a745;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.scale-degree-label.degree-root {
+    color: #ffc107;
+    background: rgba(255, 243, 205, 0.95);
+    font-weight: 800;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7em;
+}
+
+/* Fret Markers */
+.fret.fret-marker {
+    position: relative;
+}
+
+.fret.fret-marker::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: rgba(102, 126, 234, 0.6);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.fret.fret-marker-octave::before {
+    width: 8px;
+    height: 8px;
+    background: rgba(102, 126, 234, 0.8);
+    border: 2px solid rgba(102, 126, 234, 0.4);
+}
+
 .settings-input:focus {
     outline: none;
     border-color: #667eea;
@@ -1189,26 +1243,8 @@ h1 {
 
 .circle-note-group:hover .circle-note {
     stroke-width: 3 !important;
-    filter: brightness(1.1);
-    transition: stroke-width 0.2s ease;
-}
-
-/* Center transform around the text element, not the circle center */
-.circle-note-group {
-    transform-origin: center;
-    transition: transform 0.2s ease;
-}
-
-.circle-note-group:hover {
-    transform: scale(1.15);
-    /* Use the text element's position as transform origin */
-    transform-origin: center;
-}
-
-/* Ensure text scales with the group but stays centered */
-.circle-note-name {
-    transform-origin: center;
-    transition: transform 0.2s ease;
+    filter: brightness(1.2);
+    transition: stroke-width 0.2s ease, filter 0.2s ease;
 }
 
 .circle-degree {

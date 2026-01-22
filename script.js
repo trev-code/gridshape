@@ -14,12 +14,18 @@ class FretboardVisualizer {
                 'TuningEditor': typeof TuningEditor !== 'undefined' ? TuningEditor : undefined,
                 'NoteInteractionManager': typeof NoteInteractionManager !== 'undefined' ? NoteInteractionManager : undefined,
                 'TriadVisualizer': typeof TriadVisualizer !== 'undefined' ? TriadVisualizer : undefined,
-                'LegendManager': typeof LegendManager !== 'undefined' ? LegendManager : undefined
+                'LegendManager': typeof LegendManager !== 'undefined' ? LegendManager : undefined,
+                'ScaleDegreeVisualizer': typeof ScaleDegreeVisualizer !== 'undefined' ? ScaleDegreeVisualizer : undefined,
+                'FretMarkerVisualizer': typeof FretMarkerVisualizer !== 'undefined' ? FretMarkerVisualizer : undefined,
+                'ChordLibrary': typeof ChordLibrary !== 'undefined' ? ChordLibrary : undefined,
+                'MIDISupport': typeof MIDISupport !== 'undefined' ? MIDISupport : undefined
             };
             
             const missingClasses = [];
-            for (const [name, Class] of Object.entries(requiredClasses)) {
-                if (typeof Class === 'undefined') {
+            // Only check core required classes - new modules are optional
+            const coreRequired = ['InstrumentManager', 'ScaleManager', 'ScaleVisualizer'];
+            for (const name of coreRequired) {
+                if (typeof requiredClasses[name] === 'undefined') {
                     missingClasses.push(name);
                 }
             }
@@ -29,6 +35,14 @@ class FretboardVisualizer {
                 console.error('Class availability check:', requiredClasses);
                 throw new Error(errorMsg);
             }
+            
+            // Warn about optional modules but don't fail
+            const optionalModules = ['ScaleDegreeVisualizer', 'FretMarkerVisualizer', 'ChordLibrary', 'MIDISupport'];
+            optionalModules.forEach(name => {
+                if (typeof requiredClasses[name] === 'undefined') {
+                    console.warn(`Optional module ${name} not loaded - feature will be unavailable`);
+                }
+            });
             
             this.instrumentManager = new InstrumentManager();
             this.scaleManager = new ScaleManager();
@@ -85,6 +99,8 @@ class FretboardVisualizer {
         try {
             console.log('Initializing FretboardVisualizer...');
         this.setupControls();
+        // Update tuning selector after controls are set up
+        this.updateTuningSelector();
         this.applyColorPalette(); // Apply initial palette
         this.createFretboard();
         this.updateAllVisualizations();
@@ -118,6 +134,7 @@ class FretboardVisualizer {
             this.setupCustomGridSettings();
             this.setupNoteShapeSelector();
             this.setupNoteFormatSelector();
+            this.setupTuningSelector();
             // Apply loaded settings
             this.applyColorPalette();
             this.applyNoteShape();
@@ -143,8 +160,16 @@ class FretboardVisualizer {
                 this.gridRowInterval = settings.gridRowInterval || this.gridRowInterval;
                 this.gridColInterval = settings.gridColInterval || this.gridColInterval;
                 this.currentInstrument = settings.currentInstrument || this.currentInstrument;
+                this.currentTuning = settings.currentTuning || this.currentTuning;
                 this.currentKey = settings.currentKey || this.currentKey;
                 this.currentScale = settings.currentScale || this.currentScale;
+                
+                // Validate loaded settings
+                const instrument = this.instrumentManager.getInstrument(this.currentInstrument);
+                if (!instrument) {
+                    console.warn('Loaded instrument not found, resetting to default');
+                    this.currentInstrument = 'Guitar';
+                }
                 
                 // Load feature toggles
                 if (settings.features && this.features && typeof settings.features === 'object') {
@@ -202,6 +227,8 @@ class FretboardVisualizer {
     // Setup color palette selector
     setupColorPalette() {
         const buttons = document.querySelectorAll('.palette-btn');
+        // Clear all active classes first
+        buttons.forEach(btn => btn.classList.remove('active'));
         // Set active button based on loaded settings
         buttons.forEach(btn => {
             if (btn.getAttribute('data-palette') === this.currentPalette) {
@@ -380,6 +407,18 @@ class FretboardVisualizer {
         
         select.addEventListener('change', (e) => {
             this.currentInstrument = e.target.value;
+            // Update tuning selector when instrument changes
+            this.updateTuningSelector();
+            // Reset to first tuning if current tuning not available
+            const instrument = this.instrumentManager.getInstrument(this.currentInstrument);
+            if (instrument && instrument.tunings) {
+                const tunings = Object.keys(instrument.tunings);
+                if (tunings.length > 0 && (!this.currentTuning || !instrument.tunings[this.currentTuning])) {
+                    this.currentTuning = tunings[0];
+                    // Update instrument tuning
+                    instrument.tuning = instrument.tunings[this.currentTuning];
+                }
+            }
             this.saveSettings();
             this.createFretboard();
             this.updateAllVisualizations();
@@ -397,7 +436,7 @@ class FretboardVisualizer {
         window.addEventListener('tuningDeleted', () => {
             this.populateInstrumentSelector(select);
             if (!select.options[select.selectedIndex]) {
-                this.currentInstrument = 'Guitar (Standard)';
+                this.currentInstrument = 'Guitar';
                 select.value = this.currentInstrument;
                 this.createFretboard();
                 this.updateAllVisualizations();
@@ -417,6 +456,76 @@ class FretboardVisualizer {
             }
             select.appendChild(option);
         });
+        
+        // Update tuning selector after populating instruments
+        this.updateTuningSelector();
+    }
+    
+    // Setup tuning selector
+    setupTuningSelector() {
+        const select = document.getElementById('tuning-select');
+        const group = document.getElementById('tuning-selector-group');
+        if (!select || !group) return;
+        
+        select.addEventListener('change', (e) => {
+            const tuningName = e.target.value;
+            if (!tuningName) return;
+            
+            const instrument = this.instrumentManager.getInstrument(this.currentInstrument);
+            if (instrument && instrument.tunings && instrument.tunings[tuningName]) {
+                this.currentTuning = tuningName;
+                instrument.tuning = instrument.tunings[tuningName];
+                this.saveSettings();
+                this.createFretboard();
+                this.updateAllVisualizations();
+            }
+        });
+        
+        // Initial update
+        this.updateTuningSelector();
+    }
+    
+    // Update tuning selector based on current instrument
+    updateTuningSelector() {
+        const select = document.getElementById('tuning-select');
+        const group = document.getElementById('tuning-selector-group');
+        if (!select || !group) return;
+        
+        const instrument = this.instrumentManager.getInstrument(this.currentInstrument);
+        if (!instrument) {
+            group.style.display = 'none';
+            return;
+        }
+        
+        // Show selector if instrument has multiple tunings
+        if (instrument.tunings && Object.keys(instrument.tunings).length > 1) {
+            group.style.display = 'block';
+            select.innerHTML = '<option value="">Select tuning...</option>';
+            
+            Object.entries(instrument.tunings).forEach(([tuningName, tuning]) => {
+                const option = document.createElement('option');
+                option.value = tuningName;
+                // Show tuning name and notes
+                option.textContent = `${tuningName} (${tuning.join(' ')})`;
+                option.setAttribute('data-tuning', JSON.stringify(tuning));
+                
+                if (tuningName === this.currentTuning || (!this.currentTuning && tuningName === 'Standard')) {
+                    option.selected = true;
+                    this.currentTuning = tuningName;
+                    // Update instrument tuning
+                    instrument.tuning = tuning;
+                }
+                
+                select.appendChild(option);
+            });
+        } else {
+            group.style.display = 'none';
+            // Set default tuning if instrument has single tuning
+            if (instrument.tuning) {
+                this.currentTuning = null;
+                // No need to update instrument.tuning as it's already set
+            }
+        }
     }
     
     // Setup key selector
@@ -947,7 +1056,18 @@ class FretboardVisualizer {
             console.log(`Grid created with ${rows} rows and ${cols} columns`);
         } else {
             // Standard instrument with tuning
-            const tuning = instrument.tuning;
+            // Get tuning - use currentTuning if available, otherwise use default
+            let tuning = instrument.tuning;
+            if (instrument.tunings && this.currentTuning && instrument.tunings[this.currentTuning]) {
+                tuning = instrument.tunings[this.currentTuning];
+            } else if (instrument.tunings && !this.currentTuning) {
+                // Use first tuning if no currentTuning set
+                const firstTuning = Object.values(instrument.tunings)[0];
+                if (firstTuning) {
+                    tuning = firstTuning;
+                    this.currentTuning = Object.keys(instrument.tunings)[0];
+                }
+            }
             
             // Create strings from bottom (lowest) to top (highest)
             for (let i = tuning.length - 1; i >= 0; i--) {
@@ -1006,6 +1126,15 @@ class FretboardVisualizer {
             }
         }
         
+        // Apply MIDI labels if available
+        if (this.midiSupport && instrument.tuning) {
+            try {
+                this.midiSupport.applyMIDILabels(fretboard, instrument.tuning);
+            } catch (error) {
+                console.error('Error applying MIDI labels:', error);
+            }
+        }
+        
         // Setup note interactions after fretboard is created
         this.setupNoteInteractions();
     }
@@ -1026,7 +1155,18 @@ class FretboardVisualizer {
         const instrument = this.instrumentManager.getInstrument(this.currentInstrument);
         if (!instrument) return;
         
-        const tuning = instrument.tuning;
+        // Get tuning - use currentTuning if available, otherwise use default
+        let tuning = instrument.tuning;
+        if (instrument.tunings && this.currentTuning && instrument.tunings[this.currentTuning]) {
+            tuning = instrument.tunings[this.currentTuning];
+        } else if (instrument.tunings && !this.currentTuning) {
+            // Use first tuning if no currentTuning set
+            const firstTuning = Object.values(instrument.tunings)[0];
+            if (firstTuning) {
+                tuning = firstTuning;
+                this.currentTuning = Object.keys(instrument.tunings)[0];
+            }
+        }
         const scaleNotes = this.scaleManager.getScaleNotes(this.currentKey, this.currentScale);
         
         // Clear all visualizations first
@@ -1035,6 +1175,9 @@ class FretboardVisualizer {
         this.intervalVisualizer.clearIntervals(fretboard);
         this.patternVisualizer.clearPatterns(fretboard);
         this.triadVisualizer.clearTriads(fretboard);
+        if (this.scaleDegreeVisualizer) {
+            this.scaleDegreeVisualizer.clearScaleDegrees(fretboard);
+        }
         
         // Clear note selection
         if (this.noteInteractionManager) {
@@ -1204,7 +1347,11 @@ document.addEventListener('DOMContentLoaded', function() {
         TuningEditor: typeof TuningEditor,
         NoteInteractionManager: typeof NoteInteractionManager,
         TriadVisualizer: typeof TriadVisualizer,
-        LegendManager: typeof LegendManager
+        LegendManager: typeof LegendManager,
+        ScaleDegreeVisualizer: typeof ScaleDegreeVisualizer,
+        FretMarkerVisualizer: typeof FretMarkerVisualizer,
+        ChordLibrary: typeof ChordLibrary,
+        MIDISupport: typeof MIDISupport
     });
     
     try {

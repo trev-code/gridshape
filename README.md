@@ -5,7 +5,6 @@ A comprehensive, modular web application for visualizing musical scales, chords,
 **Author:** Trevor Hoffman  
 **Last Updated:** December 19, 2024
 
-> **Note for AI Assistants:** If the time since the last README update is over 20 minutes, please update this file with any new features, changes, or improvements that have been made to the project.
 
 ## Project Goals
 
@@ -61,37 +60,62 @@ A comprehensive, modular web application for visualizing musical scales, chords,
 
 ## Current Features
 
-✅ Multi-instrument support (Guitar, Mandolin, Banjo, Ukulele, Bass)  
+✅ Multi-instrument support (Guitar, 7-string, 8-string, Mandolin, Banjo, Ukulele, Bass 4/5/6-string)  
 ✅ Grid instrument support (8x8, 8x16, 16x8, 16x16, custom grids)  
+✅ Multiple tuning options per instrument (Standard, Drop D, Open tunings, etc.)  
+✅ Tuning selector in settings (shows notes in dropdown)  
 ✅ 30+ scale definitions (Major modes, Pentatonic, Blues, Jazz, Eastern, African)  
 ✅ Configurable fret count (5-30 frets)  
 ✅ Scale highlighting with root note emphasis  
+✅ Scale degree labels on fretboard  
+✅ Fret markers and position indicators  
 ✅ Chord visualization overlay  
+✅ Comprehensive chord library system (triads, 7ths, extended, altered chords)  
 ✅ Interval highlighting  
 ✅ Scale pattern detection (CAGED)  
 ✅ Note frequency analysis  
 ✅ Custom tuning editor (in settings menu)  
 ✅ Interactive circle of fifths visualization  
 ✅ Interactive chromatic circle visualization  
-✅ Multiple visual styles  
+✅ MIDI note visualization/I/O foundation  
+✅ Multiple visual styles (Classic, Colorful, Minimal, Bold, Square)  
+✅ Multiple note shapes (Square, Circular, Dot, Small Dot)  
+✅ Note name formats (Letters, Numbers, Roman numerals)  
+✅ Color palettes (Default, Warm, Cool, Vibrant, Monochrome)  
 ✅ Settings panel with feature toggles  
 ✅ Note click interactions with info panel  
-✅ Triad visualization with connection lines  
+✅ Triad/diad visualization with gradient connection lines (extend into note shapes)  
 ✅ Horizontal and vertical fretboard mirroring  
 ✅ Compact legend system  
+✅ Dynamic fretboard background with border  
 ✅ Fretboard fits to screen (no scrolling)  
+✅ Settings persistence (localStorage)  
+✅ Real-time debug console with copy functionality  
+
+## Recent Improvements
+
+- **Tuning System**: Instruments now support multiple tunings selectable from a dropdown in settings
+- **New Instruments**: Added 6-string bass, 7-string and 8-string guitars
+- **Scale Degrees**: Visual scale degree labels (1-7) appear on each note in the scale
+- **Fret Markers**: Visual indicators at standard fret positions (3, 5, 7, 9, 12, etc.)
+- **Chord Library**: Comprehensive chord definitions system for advanced chord analysis
+- **MIDI Support**: Foundation for MIDI note number visualization and I/O
+- **Triad Lines**: Connection lines now extend into note shapes with gradient opacity
+- **Fretboard Background**: Dynamically sized background with border that fits the fretboard
+- **Circle Animations**: Removed scaling animations, kept smooth color transitions
+- **Settings Validation**: Improved loading and validation of saved settings
 
 ## Future Enhancements
 
-- Scale degree labels on fretboard
 - Arpeggio pattern visualization
 - Chord progression analysis
-- Fret markers and position indicators
 - Export/print functionality
 - Scale comparison mode
 - Audio playback integration
 - Multi-note selection
 - Note sequence builder
+- Chord voicing suggestions
+- Full MIDI I/O implementation
 
 ## Project Context
 

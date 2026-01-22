@@ -458,21 +458,84 @@ class TriadVisualizer {
         const thirdX = thirdRect.left - containerRect.left + thirdRect.width / 2;
         const thirdY = thirdRect.top - containerRect.top + thirdRect.height / 2;
         
+        // Calculate note shape radius
+        const rootRadius = Math.min(rootRect.width, rootRect.height) / 2;
+        const thirdRadius = Math.min(thirdRect.width, thirdRect.height) / 2;
+        
         svgOverlay.setAttribute('width', containerRect.width);
         svgOverlay.setAttribute('height', containerRect.height);
         
-        // Draw line connecting the two notes
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', rootX);
-        line.setAttribute('y1', rootY);
-        line.setAttribute('x2', thirdX);
-        line.setAttribute('y2', thirdY);
+        // Helper function to calculate point on edge of note shape
+        const getEdgePoint = (centerX, centerY, targetX, targetY, radius) => {
+            const dx = targetX - centerX;
+            const dy = targetY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance === 0) return { x: centerX, y: centerY };
+            const scale = radius / distance;
+            return {
+                x: centerX + dx * scale,
+                y: centerY + dy * scale
+            };
+        };
+        
         // Vary color slightly for multiple diads
         const hue = (index * 30) % 360;
-        line.setAttribute('stroke', `hsl(${hue}, 70%, 50%)`);
+        const strokeColor = `hsl(${hue}, 70%, 50%)`;
+        
+        // Create gradient for opacity variation
+        const gradientId = `diad-gradient-${index}-${rootX}-${rootY}-${thirdX}-${thirdY}`;
+        let defs = svgOverlay.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svgOverlay.appendChild(defs);
+        }
+        
+        const existingGradient = defs.querySelector(`#${gradientId}`);
+        if (existingGradient) {
+            existingGradient.remove();
+        }
+        
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', gradientId);
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '0%');
+        
+        // Lower opacity at edges (in note areas), higher in middle
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', strokeColor);
+        stop1.setAttribute('stop-opacity', opacity * 0.2);
+        gradient.appendChild(stop1);
+        
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '50%');
+        stop2.setAttribute('stop-color', strokeColor);
+        stop2.setAttribute('stop-opacity', opacity * 0.6);
+        gradient.appendChild(stop2);
+        
+        const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop3.setAttribute('offset', '100%');
+        stop3.setAttribute('stop-color', strokeColor);
+        stop3.setAttribute('stop-opacity', opacity * 0.2);
+        gradient.appendChild(stop3);
+        
+        defs.appendChild(gradient);
+        
+        // Calculate edge points
+        const rootEdge = getEdgePoint(rootX, rootY, thirdX, thirdY, rootRadius);
+        const thirdEdge = getEdgePoint(thirdX, thirdY, rootX, rootY, thirdRadius);
+        
+        // Draw line from edge to edge
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', rootEdge.x);
+        line.setAttribute('y1', rootEdge.y);
+        line.setAttribute('x2', thirdEdge.x);
+        line.setAttribute('y2', thirdEdge.y);
+        line.setAttribute('stroke', `url(#${gradientId})`);
         line.setAttribute('stroke-width', '2');
         line.setAttribute('stroke-linecap', 'round');
-        line.setAttribute('opacity', opacity * 0.6);
         line.setAttribute('data-index', index);
         svgOverlay.appendChild(line);
     }
@@ -507,7 +570,7 @@ class TriadVisualizer {
         const fifthRect = fifthFret.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
         
-        // Calculate center points relative to container
+        // Calculate center points and note shape radius
         const rootX = rootRect.left - containerRect.left + rootRect.width / 2;
         const rootY = rootRect.top - containerRect.top + rootRect.height / 2;
         const thirdX = thirdRect.left - containerRect.left + thirdRect.width / 2;
@@ -515,60 +578,112 @@ class TriadVisualizer {
         const fifthX = fifthRect.left - containerRect.left + fifthRect.width / 2;
         const fifthY = fifthRect.top - containerRect.top + fifthRect.height / 2;
         
+        // Calculate note shape radius (use smaller dimension for circular shapes)
+        const rootRadius = Math.min(rootRect.width, rootRect.height) / 2;
+        const thirdRadius = Math.min(thirdRect.width, thirdRect.height) / 2;
+        const fifthRadius = Math.min(fifthRect.width, fifthRect.height) / 2;
+        
         // Set SVG dimensions
         svgOverlay.setAttribute('width', containerRect.width);
         svgOverlay.setAttribute('height', containerRect.height);
         
-        // Draw lines connecting the three notes
-        const positions = [
-            { x: rootX, y: rootY, note: 'root' },
-            { x: thirdX, y: thirdY, note: 'third' },
-            { x: fifthX, y: fifthY, note: 'fifth' }
-        ];
+        // Don't clear - we want to accumulate lines for multiple triads
+        // svgOverlay.innerHTML = ''; // Removed - lines accumulate
         
-        // Connect root to third
-        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line1.setAttribute('x1', rootX);
-        line1.setAttribute('y1', rootY);
-        line1.setAttribute('x2', thirdX);
-        line1.setAttribute('y2', thirdY);
-        line1.setAttribute('stroke', '#f39c12');
-        line1.setAttribute('stroke-width', '3');
-        line1.setAttribute('stroke-linecap', 'round');
         // Vary color slightly for multiple triads
         const hue = (index * 30) % 360;
         const strokeColor = `hsl(${hue}, 70%, 50%)`;
         
-        line1.setAttribute('stroke', strokeColor);
-        line1.setAttribute('opacity', opacity * 0.6);
-        line1.setAttribute('data-index', index);
-        svgOverlay.appendChild(line1);
+        // Helper function to calculate point on edge of note shape
+        const getEdgePoint = (centerX, centerY, targetX, targetY, radius) => {
+            const dx = targetX - centerX;
+            const dy = targetY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance === 0) return { x: centerX, y: centerY };
+            const scale = radius / distance;
+            return {
+                x: centerX + dx * scale,
+                y: centerY + dy * scale
+            };
+        };
         
-        // Connect third to fifth
-        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line2.setAttribute('x1', thirdX);
-        line2.setAttribute('y1', thirdY);
-        line2.setAttribute('x2', fifthX);
-        line2.setAttribute('y2', fifthY);
-        line2.setAttribute('stroke', strokeColor);
-        line2.setAttribute('stroke-width', '3');
-        line2.setAttribute('stroke-linecap', 'round');
-        line2.setAttribute('opacity', opacity * 0.6);
-        line2.setAttribute('data-index', index);
-        svgOverlay.appendChild(line2);
+        // Helper function to draw line with gradient opacity (lower in note areas)
+        const drawLineWithGradient = (x1, y1, x2, y2, radius1, radius2, color, baseOpacity, lineIndex) => {
+            // Calculate edge points
+            const edge1 = getEdgePoint(x1, y1, x2, y2, radius1);
+            const edge2 = getEdgePoint(x2, y2, x1, y1, radius2);
+            
+            // Create gradient for opacity variation
+            const gradientId = `triad-gradient-${index}-${lineIndex}-${Math.round(x1)}-${Math.round(y1)}-${Math.round(x2)}-${Math.round(y2)}`;
+            let defs = svgOverlay.querySelector('defs');
+            if (!defs) {
+                defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                svgOverlay.appendChild(defs);
+            }
+            
+            // Remove existing gradient with same ID if any
+            const existingGradient = defs.querySelector(`#${gradientId}`);
+            if (existingGradient) {
+                existingGradient.remove();
+            }
+            
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', gradientId);
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '100%');
+            gradient.setAttribute('y2', '0%');
+            
+            // Add stops: lower opacity at edges (in note areas), higher in middle
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', color);
+            stop1.setAttribute('stop-opacity', baseOpacity * 0.3); // Lower opacity in note area
+            gradient.appendChild(stop1);
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '15%');
+            stop2.setAttribute('stop-color', color);
+            stop2.setAttribute('stop-opacity', baseOpacity * 0.6);
+            gradient.appendChild(stop2);
+            
+            const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop3.setAttribute('offset', '50%');
+            stop3.setAttribute('stop-color', color);
+            stop3.setAttribute('stop-opacity', baseOpacity);
+            gradient.appendChild(stop3);
+            
+            const stop4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop4.setAttribute('offset', '85%');
+            stop4.setAttribute('stop-color', color);
+            stop4.setAttribute('stop-opacity', baseOpacity * 0.6);
+            gradient.appendChild(stop4);
+            
+            const stop5 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop5.setAttribute('offset', '100%');
+            stop5.setAttribute('stop-color', color);
+            stop5.setAttribute('stop-opacity', baseOpacity * 0.3); // Lower opacity in note area
+            gradient.appendChild(stop5);
+            
+            defs.appendChild(gradient);
+            
+            // Draw line from edge to edge
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', edge1.x);
+            line.setAttribute('y1', edge1.y);
+            line.setAttribute('x2', edge2.x);
+            line.setAttribute('y2', edge2.y);
+            line.setAttribute('stroke', `url(#${gradientId})`);
+            line.setAttribute('stroke-width', '3');
+            line.setAttribute('stroke-linecap', 'round');
+            line.setAttribute('data-index', index);
+            svgOverlay.appendChild(line);
+        };
         
-        // Connect fifth back to root (triangle)
-        const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line3.setAttribute('x1', fifthX);
-        line3.setAttribute('y1', fifthY);
-        line3.setAttribute('x2', rootX);
-        line3.setAttribute('y2', rootY);
-        line3.setAttribute('stroke', strokeColor);
-        line3.setAttribute('stroke-width', '3');
-        line3.setAttribute('stroke-linecap', 'round');
-        line3.setAttribute('opacity', opacity * 0.6);
-        line3.setAttribute('data-index', index);
-        svgOverlay.appendChild(line3);
+        // Draw lines extending into note shapes
+        drawLineWithGradient(rootX, rootY, thirdX, thirdY, rootRadius, thirdRadius, strokeColor, opacity * 0.6, 1);
+        drawLineWithGradient(thirdX, thirdY, fifthX, fifthY, thirdRadius, fifthRadius, strokeColor, opacity * 0.6, 2);
+        drawLineWithGradient(fifthX, fifthY, rootX, rootY, fifthRadius, rootRadius, strokeColor, opacity * 0.6, 3);
     }
     
     // Clear triad connection lines
