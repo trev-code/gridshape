@@ -39,6 +39,46 @@ class InstrumentManager {
                 tuning: ['B', 'E', 'A', 'D', 'G'],
                 name: 'Bass (5-string)',
                 description: '5-string bass with low B'
+            },
+            'Grid 8x8': {
+                tuning: null, // Grids use rows/cols instead
+                name: 'Grid 8x8',
+                description: '8 rows by 8 columns grid',
+                type: 'grid',
+                rows: 8,
+                cols: 8
+            },
+            'Grid 8x16': {
+                tuning: null,
+                name: 'Grid 8x16',
+                description: '8 rows by 16 columns grid',
+                type: 'grid',
+                rows: 8,
+                cols: 16
+            },
+            'Grid 16x8': {
+                tuning: null,
+                name: 'Grid 16x8',
+                description: '16 rows by 8 columns grid',
+                type: 'grid',
+                rows: 16,
+                cols: 8
+            },
+            'Grid 16x16': {
+                tuning: null,
+                name: 'Grid 16x16',
+                description: '16 rows by 16 columns grid',
+                type: 'grid',
+                rows: 16,
+                cols: 16
+            },
+            'Custom Grid': {
+                tuning: null,
+                name: 'Custom Grid',
+                description: 'Custom grid with configurable rows and columns',
+                type: 'grid',
+                rows: 10,
+                cols: 10
             }
         };
     }

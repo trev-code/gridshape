@@ -27,6 +27,7 @@ class DebugConsole {
             <div class="debug-header">
                 <h4>Debug Console</h4>
                 <div class="debug-controls">
+                    <button class="debug-btn" id="debug-copy">Copy</button>
                     <button class="debug-btn" id="debug-clear">Clear</button>
                     <button class="debug-btn" id="debug-toggle">Hide</button>
                 </div>
@@ -38,6 +39,7 @@ class DebugConsole {
         document.body.appendChild(this.container);
         
         // Setup controls
+        document.getElementById('debug-copy').addEventListener('click', () => this.copyToClipboard());
         document.getElementById('debug-clear').addEventListener('click', () => this.clear());
         document.getElementById('debug-toggle').addEventListener('click', () => this.toggle());
     }
@@ -177,6 +179,67 @@ class DebugConsole {
     // Log custom message
     log(message, type = 'log') {
         this.addEntry(type, message);
+    }
+    
+    // Copy all console entries to clipboard
+    copyToClipboard() {
+        const content = document.getElementById('debug-content');
+        if (!content) return;
+        
+        // Collect all entries
+        const entries = [];
+        const entryElements = content.querySelectorAll('.debug-entry');
+        
+        entryElements.forEach(entry => {
+            const time = entry.querySelector('.debug-time')?.textContent || '';
+            const message = entry.querySelector('.debug-message')?.textContent || '';
+            const type = entry.className.includes('error') ? 'ERROR' : 
+                        entry.className.includes('warning') ? 'WARNING' : 
+                        entry.className.includes('info') ? 'INFO' : 'LOG';
+            entries.push(`${time} [${type}] ${message}`);
+        });
+        
+        // Combine into single string
+        const textToCopy = entries.join('\n');
+        
+        // Copy to clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                this.addEntry('info', 'Console contents copied to clipboard');
+            }).catch(err => {
+                this.addEntry('error', `Failed to copy: ${err.message}`);
+                // Fallback method
+                this.fallbackCopyToClipboard(textToCopy);
+            });
+        } else {
+            // Fallback for older browsers
+            this.fallbackCopyToClipboard(textToCopy);
+        }
+    }
+    
+    // Fallback copy method
+    fallbackCopyToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                this.addEntry('info', 'Console contents copied to clipboard');
+            } else {
+                this.addEntry('error', 'Failed to copy to clipboard');
+            }
+        } catch (err) {
+            this.addEntry('error', `Failed to copy: ${err.message}`);
+        } finally {
+            document.body.removeChild(textArea);
+        }
     }
 }
 

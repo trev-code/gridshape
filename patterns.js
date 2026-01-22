@@ -5,6 +5,78 @@ class PatternVisualizer {
         this.instrumentManager = instrumentManager;
     }
     
+    // Find patterns from DOM (for grids)
+    findPatternsFromDOM(scaleNotes, rootNote, fretboardElement) {
+        const patterns = [];
+        const allFrets = fretboardElement.querySelectorAll('.fret');
+        
+        // Find all root positions
+        const rootPositions = [];
+        allFrets.forEach(fret => {
+            const note = fret.getAttribute('data-note');
+            if (note === rootNote) {
+                const stringIndex = parseInt(fret.getAttribute('data-string'));
+                const fretNum = parseInt(fret.getAttribute('data-fret'));
+                rootPositions.push({ string: stringIndex, fret: fretNum });
+            }
+        });
+        
+        // For each root, try to build a simple pattern
+        rootPositions.forEach(rootPos => {
+            const pattern = this.buildPatternFromRootDOM(rootPos, scaleNotes, fretboardElement);
+            if (pattern && pattern.length >= 3) {
+                patterns.push(pattern);
+            }
+        });
+        
+        return patterns;
+    }
+    
+    // Build pattern from root using DOM (for grids)
+    buildPatternFromRootDOM(rootPos, scaleNotes, fretboardElement) {
+        const pattern = [rootPos];
+        const visited = new Set();
+        visited.add(`${rootPos.string}-${rootPos.fret}`);
+        
+        let currentPos = { ...rootPos };
+        const maxPatternLength = 7;
+        
+        for (let i = 0; i < maxPatternLength - 1; i++) {
+            let found = false;
+            
+            // Check adjacent positions (up/down rows, left/right columns)
+            const directions = [
+                { string: currentPos.string - 1, fret: currentPos.fret },
+                { string: currentPos.string + 1, fret: currentPos.fret },
+                { string: currentPos.string, fret: currentPos.fret - 1 },
+                { string: currentPos.string, fret: currentPos.fret + 1 }
+            ];
+            
+            for (const dir of directions) {
+                const key = `${dir.string}-${dir.fret}`;
+                if (visited.has(key)) continue;
+                
+                const fret = fretboardElement.querySelector(
+                    `[data-string="${dir.string}"][data-fret="${dir.fret}"]`
+                );
+                if (fret) {
+                    const note = fret.getAttribute('data-note');
+                    if (scaleNotes.includes(note)) {
+                        pattern.push(dir);
+                        visited.add(key);
+                        currentPos = dir;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!found) break;
+        }
+        
+        return pattern;
+    }
+    
     // Find CAGED patterns on fretboard
     findCAGEDPatterns(scaleNotes, rootNote, tuning, numFrets) {
         const patterns = [];

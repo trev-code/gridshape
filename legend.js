@@ -192,10 +192,23 @@ class LegendManager {
         const item = this.legendItems[itemKey];
         if (!item) return '';
         
+        // Get colors from CSS based on current palette
+        const palette = document.body.getAttribute('data-palette') || 'default';
+        let color = item.color || '#fff';
+        let borderColor = item.borderColor || item.color || '#333';
+        
+        // Try to get computed colors from a sample element with the same class
+        const sampleElement = document.querySelector(`.${itemKey}`);
+        if (sampleElement) {
+            const computedStyle = window.getComputedStyle(sampleElement);
+            color = computedStyle.backgroundColor || color;
+            borderColor = computedStyle.borderColor || computedStyle.borderLeftColor || borderColor;
+        }
+        
         return `
             <div class="legend-item-compact" data-item="${itemKey}" title="${item.description}">
                 <div class="legend-color-box-compact" 
-                     style="background: ${item.color || '#fff'}; border-color: ${item.borderColor || item.color || '#333'};">
+                     style="background: ${color}; border-color: ${borderColor};">
                 </div>
                 <span class="legend-label-compact">${item.label}</span>
             </div>

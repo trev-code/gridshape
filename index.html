@@ -25,7 +25,24 @@
                         <button class="version-btn" data-version="2">Colorful</button>
                         <button class="version-btn active" data-version="3">Minimal</button>
                         <button class="version-btn" data-version="4">Bold</button>
-                        <button class="version-btn" data-version="5">Circular</button>
+                        <button class="version-btn" data-version="5">Square</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Note Shape:</label>
+                    <div class="button-group">
+                        <button class="shape-btn active" data-shape="square">Square</button>
+                        <button class="shape-btn" data-shape="circular">Circular</button>
+                        <button class="shape-btn" data-shape="dot">Dot</button>
+                        <button class="shape-btn" data-shape="small-dot">Small Dot</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Note Names:</label>
+                    <div class="button-group">
+                        <button class="note-format-btn active" data-format="letter">Letters</button>
+                        <button class="note-format-btn" data-format="numerical">Numbers</button>
+                        <button class="note-format-btn" data-format="roman">Roman</button>
                     </div>
                 </div>
                 <div class="settings-group">
@@ -39,8 +56,55 @@
                     </div>
                 </div>
                 <div class="settings-group">
-                    <label for="fret-count-input">Number of Frets:</label>
-                    <input type="number" id="fret-count-input" min="5" max="30" value="20" class="settings-input">
+                    <label for="fret-count-input">Frets / Columns:</label>
+                    <div class="number-input-wrapper">
+                        <button class="number-input-btn" id="fret-count-decrease">−</button>
+                        <input type="number" id="fret-count-input" min="5" max="30" value="20" class="settings-input">
+                        <button class="number-input-btn" id="fret-count-increase">+</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Fretboard Mirroring:</label>
+                    <div class="button-group">
+                        <button class="mirror-btn" id="mirror-horizontal" data-mirror="horizontal">Horizontal</button>
+                        <button class="mirror-btn" id="mirror-vertical" data-mirror="vertical">Vertical</button>
+                        <button class="mirror-btn active" id="mirror-none" data-mirror="none">None</button>
+                    </div>
+                </div>
+                <div class="settings-group" id="custom-grid-settings" style="display: none;">
+                    <label for="grid-rows-input">Grid Rows:</label>
+                    <div class="number-input-wrapper">
+                        <button class="number-input-btn" id="grid-rows-decrease">−</button>
+                        <input type="number" id="grid-rows-input" min="2" max="32" value="10" class="settings-input">
+                        <button class="number-input-btn" id="grid-rows-increase">+</button>
+                    </div>
+                    <label for="grid-cols-input" style="margin-top: 10px;">Grid Columns:</label>
+                    <div class="number-input-wrapper">
+                        <button class="number-input-btn" id="grid-cols-decrease">−</button>
+                        <input type="number" id="grid-cols-input" min="2" max="32" value="10" class="settings-input">
+                        <button class="number-input-btn" id="grid-cols-increase">+</button>
+                    </div>
+                </div>
+                <div class="settings-group" id="grid-interval-settings" style="display: none;">
+                    <label for="grid-row-interval-input">Row Interval (semitones):</label>
+                    <div class="number-input-wrapper">
+                        <button class="number-input-btn" id="grid-row-interval-decrease">−</button>
+                        <input type="number" id="grid-row-interval-input" min="1" max="12" value="1" class="settings-input">
+                        <button class="number-input-btn" id="grid-row-interval-increase">+</button>
+                    </div>
+                    <label for="grid-col-interval-input" style="margin-top: 10px;">Column Interval (semitones):</label>
+                    <div class="number-input-wrapper">
+                        <button class="number-input-btn" id="grid-col-interval-decrease">−</button>
+                        <input type="number" id="grid-col-interval-input" min="1" max="12" value="1" class="settings-input">
+                        <button class="number-input-btn" id="grid-col-interval-increase">+</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <h4 style="margin: 0;">Custom Tuning Editor</h4>
+                        <button class="settings-toggle" id="toggle-tuning-editor" style="padding: 4px 10px; font-size: 0.75em;">Show</button>
+                    </div>
+                    <div id="tuning-editor-container" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -66,47 +130,22 @@
         <!-- Circle Visualizations -->
         <div class="circle-section">
             <div class="circle-controls">
-                <button class="circle-toggle" id="toggle-circle-fifths">Show Circle of Fifths</button>
-                <button class="circle-toggle" id="toggle-chromatic">Show Chromatic Circle</button>
+                <button class="circle-toggle" id="toggle-circle-fifths">Circle of Fifths</button>
+                <button class="circle-toggle" id="toggle-chromatic">Chromatic Circle</button>
             </div>
             <div class="circles-container">
                 <div id="circle-of-fifths" class="circle-container" style="display: none;"></div>
                 <div id="chromatic-circle" class="circle-container" style="display: none;"></div>
             </div>
         </div>
-        
-        <!-- Tuning Editor -->
-        <div class="tuning-section">
-            <button class="tuning-toggle" id="toggle-tuning-editor">Custom Tuning Editor</button>
-            <div id="tuning-editor-container" style="display: none;"></div>
-        </div>
 
-        <!-- Feature Toggles Bar - Right above fretboard -->
+        <!-- Feature Toggles Bar - Right above fretboard, 5 buttons in a row -->
         <div class="feature-toggles-bar">
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-scale" checked>
-                <span>Scale</span>
-            </label>
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-chords">
-                <span>Chords</span>
-            </label>
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-intervals">
-                <span>Intervals</span>
-            </label>
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-patterns">
-                <span>Patterns</span>
-            </label>
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-frequency">
-                <span>Frequency</span>
-            </label>
-            <label class="toggle-label-horizontal">
-                <input type="checkbox" id="toggle-triads">
-                <span>Triads</span>
-            </label>
+            <button class="feature-toggle-btn active" id="toggle-scale" data-feature="scale">Scale</button>
+            <button class="feature-toggle-btn" id="toggle-chords" data-feature="chords">Chords</button>
+            <button class="feature-toggle-btn" id="toggle-intervals" data-feature="intervals">Intervals</button>
+            <button class="feature-toggle-btn" id="toggle-patterns" data-feature="patterns">Patterns</button>
+            <button class="feature-toggle-btn" id="toggle-triads" data-feature="triads">Triads</button>
         </div>
 
         <!-- Fretboard Container -->
@@ -125,15 +164,15 @@
         
         <!-- Bottom Controls Bar - Chord and Triad selectors -->
         <div class="bottom-controls-bar">
-            <div class="control-item">
+            <div class="control-item-spaced">
                 <label for="chord-select" class="control-label">Chord:</label>
                 <select id="chord-select" class="control-select-small">
                     <option value="">None</option>
                 </select>
             </div>
-            <div class="control-item" id="triad-controls" style="display: none;">
-                <label for="triad-select" class="control-label">Triad:</label>
-                <select id="triad-select" class="control-select-small">
+            <div class="control-item-spaced" id="triad-controls" style="display: none;">
+                <label for="triad-select" class="control-label">Triad/Diad:</label>
+                <select id="triad-select" class="control-select-small" multiple size="4" style="min-height: 80px;">
                     <option value="">None</option>
                 </select>
                 <label for="triad-method-select" class="control-label">Method:</label>
@@ -142,6 +181,7 @@
                     <option value="close-voicing">Close Voicing</option>
                     <option value="spread">Spread</option>
                     <option value="string-sets">String Sets</option>
+                    <option value="string-sets-2-3">2-3 Strings</option>
                 </select>
             </div>
         </div>
@@ -156,7 +196,6 @@
     <script src="chords.js"></script>
     <script src="intervals.js"></script>
     <script src="patterns.js"></script>
-    <script src="frequency.js"></script>
     <script src="tuning-editor.js"></script>
     <script src="note-interactions.js"></script>
     <script src="triads.js"></script>

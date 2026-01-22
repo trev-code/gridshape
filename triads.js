@@ -79,6 +79,7 @@ class TriadVisualizer {
     // Find all positions of a note
     findNotePositions(note, tuning, numFrets) {
         const positions = [];
+        if (!tuning) return positions; // Handle grid case
         for (let stringIndex = 0; stringIndex < tuning.length; stringIndex++) {
             for (let fret = 0; fret <= numFrets; fret++) {
                 const fretNote = this.instrumentManager.getNote(tuning, stringIndex, fret);
@@ -90,12 +91,76 @@ class TriadVisualizer {
         return positions;
     }
     
+    // Find triad positions from DOM (for grids and general case)
+    findTriadPositionsFromDOM(triad, fretboardElement, method = 'connected') {
+        // Find all positions of each note from the DOM
+        const allFrets = fretboardElement.querySelectorAll('.fret');
+        const rootPositions = [];
+        const thirdPositions = [];
+        const fifthPositions = [];
+        
+        // Handle diads (2 notes) and triads (3 notes)
+        const isDiad = triad.notes && triad.notes.length === 2;
+        const note1 = triad.notes ? triad.notes[0] : triad.root;
+        const note2 = triad.notes ? triad.notes[1] : (triad.third || null);
+        const note3 = triad.notes ? (triad.notes[2] || null) : (triad.fifth || null);
+        
+        allFrets.forEach(fret => {
+            const note = fret.getAttribute('data-note');
+            const stringIndex = parseInt(fret.getAttribute('data-string'));
+            const fretNum = parseInt(fret.getAttribute('data-fret'));
+            
+            if (note === note1) {
+                rootPositions.push({ string: stringIndex, fret: fretNum, note: note });
+            } else if (note2 && note === note2) {
+                thirdPositions.push({ string: stringIndex, fret: fretNum, note: note });
+            } else if (note3 && note === note3) {
+                fifthPositions.push({ string: stringIndex, fret: fretNum, note: note });
+            }
+        });
+        
+        // For diads, return simple pairs
+        if (isDiad) {
+            const diadPositions = [];
+            rootPositions.forEach(rootPos => {
+                thirdPositions.forEach(thirdPos => {
+                    const stringDiff = Math.abs(thirdPos.string - rootPos.string);
+                    const fretDiff = Math.abs(thirdPos.fret - rootPos.fret);
+                    // Allow positions on adjacent rows/strings within reasonable distance
+                    if (stringDiff <= 3 && fretDiff <= 5) {
+                        diadPositions.push({
+                            root: rootPos,
+                            third: thirdPos,
+                            type: 'diad'
+                        });
+                    }
+                });
+            });
+            return diadPositions;
+        }
+        
+        // Use the same methods but with DOM-found positions for triads
+        switch(method) {
+            case 'connected':
+                return this.findConnectedTriads(rootPositions, thirdPositions, fifthPositions, null);
+            case 'close-voicing':
+                return this.findCloseVoicings(rootPositions, thirdPositions, fifthPositions, null, 100);
+            case 'spread':
+                return this.findSpreadTriads(rootPositions, thirdPositions, fifthPositions, null, 100);
+            case 'string-sets':
+            case 'string-sets-2-3':
+                return this.findStringSetTriads(rootPositions, thirdPositions, fifthPositions, null);
+            default:
+                return this.findConnectedTriads(rootPositions, thirdPositions, fifthPositions, null);
+        }
+    }
+    
     // Method 1: Connected triads (notes on adjacent strings, close together)
     findConnectedTriads(rootPositions, thirdPositions, fifthPositions, tuning) {
         const triads = [];
         
         rootPositions.forEach(rootPos => {
-            // Look for third on adjacent strings
+            // Look for third on adjacent strings/rows
             const nearbyThirds = thirdPositions.filter(pos => {
                 const stringDiff = Math.abs(pos.string - rootPos.string);
                 const fretDiff = Math.abs(pos.fret - rootPos.fret);
@@ -111,7 +176,7 @@ class TriadVisualizer {
                 });
                 
                 nearbyFifths.forEach(fifthPos => {
-                    // Check if all three are on adjacent strings
+                    // Check if all three are on adjacent strings/rows
                     const strings = [rootPos.string, thirdPos.string, fifthPos.string].sort((a, b) => a - b);
                     const isAdjacent = strings.every((s, i) => i === 0 || s - strings[i-1] <= 2);
                     
@@ -200,14 +265,33 @@ class TriadVisualizer {
         return triads;
     }
     
-    // Method 4: String set triads (specific string combinations)
+    // Method 4: String set triads (specific string/row combinations)
     findStringSetTriads(rootPositions, thirdPositions, fifthPositions, tuning) {
         const triads = [];
-        const stringSets = [
-            [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5],
-            [0, 1, 3], [1, 2, 4], [2, 3, 5],
-            [0, 2, 3], [1, 3, 4], [2, 4, 5]
-        ];
+        // For grids, generate dynamic string sets; for instruments, use predefined
+        let stringSets;
+        if (tuning && tuning.length > 0) {
+            stringSets = [
+                [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5],
+                [0, 1, 3], [1, 2, 4], [2, 3, 5],
+                [0, 2, 3], [1, 3, 4], [2, 4, 5]
+            ];
+        } else {
+            // For grids, use any three adjacent rows
+            const maxString = Math.max(
+                ...rootPositions.map(p => p.string),
+                ...thirdPositions.map(p => p.string),
+                ...fifthPositions.map(p => p.string)
+            );
+            stringSets = [];
+            for (let i = 0; i <= maxString - 2; i++) {
+                stringSets.push([i, i + 1, i + 2]);
+                if (i <= maxString - 3) {
+                    stringSets.push([i, i + 1, i + 3]);
+                    stringSets.push([i, i + 2, i + 3]);
+                }
+            }
+        }
         
         stringSets.forEach(stringSet => {
             rootPositions.forEach(rootPos => {
@@ -236,28 +320,90 @@ class TriadVisualizer {
         return triads;
     }
     
-    // Highlight triad on fretboard with connecting lines
-    highlightTriad(fretboardElement, triad, visualizationMethod = 'connected') {
-        const allFrets = fretboardElement.querySelectorAll('.fret');
+    // Find all positions on 2-3 strings for a triad/diad
+    findAllStringSetPositions(triad, tuning, numFrets, isDiad = false) {
+        const allPositions = [];
         
-        // Clear previous highlighting
-        allFrets.forEach(fret => {
-            fret.classList.remove('triad-root', 'triad-third', 'triad-fifth', 'triad-connection');
+        // Find all positions of each note
+        const notePositions = {};
+        triad.notes.forEach(note => {
+            notePositions[note] = this.findNotePositions(note, tuning, numFrets);
         });
         
-        // Clear previous connection lines
-        this.clearTriadConnections();
+        const notes = Object.keys(notePositions);
+        if (notes.length < 2) return [];
         
-        // Get fret positions
+        // For 2-note diads, find all positions on 2 adjacent strings
+        if (isDiad && notes.length === 2) {
+            const note1Positions = notePositions[notes[0]];
+            const note2Positions = notePositions[notes[1]];
+            
+            note1Positions.forEach(pos1 => {
+                note2Positions.forEach(pos2 => {
+                    const stringDiff = Math.abs(pos2.string - pos1.string);
+                    if (stringDiff <= 2 && stringDiff > 0) {
+                        allPositions.push({
+                            root: pos1,
+                            third: pos2,
+                            type: 'diad-2-string'
+                        });
+                    }
+                });
+            });
+        } else if (notes.length === 3) {
+            // For triads, find all positions on 2-3 strings
+            const rootPositions = notePositions[notes[0]];
+            const thirdPositions = notePositions[notes[1]];
+            const fifthPositions = notePositions[notes[2]];
+            
+            rootPositions.forEach(rootPos => {
+                thirdPositions.forEach(thirdPos => {
+                    fifthPositions.forEach(fifthPos => {
+                        const strings = [rootPos.string, thirdPos.string, fifthPos.string];
+                        const uniqueStrings = new Set(strings);
+                        
+                        // Must be on 2-3 strings
+                        if (uniqueStrings.size >= 2 && uniqueStrings.size <= 3) {
+                            const stringSpan = Math.max(...strings) - Math.min(...strings);
+                            if (stringSpan <= 3) {
+                                allPositions.push({
+                                    root: rootPos,
+                                    third: thirdPos,
+                                    fifth: fifthPos,
+                                    type: 'triad-2-3-string'
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+        }
+        
+        return allPositions;
+    }
+    
+    // Highlight triad on fretboard with connecting lines
+    highlightTriad(fretboardElement, triad, visualizationMethod = 'connected', index = 0, opacity = 1) {
+        // Don't clear all - we want to show multiple triads
+        // Only clear if this is the first one (index 0)
+        if (index === 0) {
+            const allFrets = fretboardElement.querySelectorAll('.fret');
+            allFrets.forEach(fret => {
+                fret.classList.remove('triad-root', 'triad-third', 'triad-fifth', 'triad-connection');
+            });
+            this.clearTriadConnections();
+        }
+        
+        // Get fret positions (handle diads with only 2 notes)
         const rootFret = fretboardElement.querySelector(
             `[data-string="${triad.root.string}"][data-fret="${triad.root.fret}"]`
         );
-        const thirdFret = fretboardElement.querySelector(
+        const thirdFret = triad.third ? fretboardElement.querySelector(
             `[data-string="${triad.third.string}"][data-fret="${triad.third.fret}"]`
-        );
-        const fifthFret = fretboardElement.querySelector(
+        ) : null;
+        const fifthFret = triad.fifth ? fretboardElement.querySelector(
             `[data-string="${triad.fifth.string}"][data-fret="${triad.fifth.fret}"]`
-        );
+        ) : null;
         
         // Highlight notes
         if (rootFret) {
@@ -270,14 +416,20 @@ class TriadVisualizer {
             fifthFret.classList.add('triad-fifth');
         }
         
-        // Draw connecting lines
-        if (rootFret && thirdFret && fifthFret) {
-            this.drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement);
+        // Draw connecting lines (handle diads with 2 notes)
+        if (rootFret && thirdFret) {
+            if (fifthFret) {
+                // Full triad
+                this.drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement, index, opacity);
+            } else {
+                // Diad - just connect the two notes
+                this.drawDiadConnections(rootFret, thirdFret, fretboardElement, index, opacity);
+            }
         }
     }
     
-    // Draw SVG lines connecting triad notes
-    drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement) {
+    // Draw SVG lines connecting diad notes (2 notes)
+    drawDiadConnections(rootFret, thirdFret, fretboardElement, index = 0, opacity = 1) {
         const container = fretboardElement.closest('.fretboard-container');
         if (!container) return;
         
@@ -292,7 +444,56 @@ class TriadVisualizer {
             svgOverlay.style.width = '100%';
             svgOverlay.style.height = '100%';
             svgOverlay.style.pointerEvents = 'none';
-            svgOverlay.style.zIndex = '5';
+            svgOverlay.style.zIndex = '2';
+            container.style.position = 'relative';
+            container.appendChild(svgOverlay);
+        }
+        
+        const rootRect = rootFret.getBoundingClientRect();
+        const thirdRect = thirdFret.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        const rootX = rootRect.left - containerRect.left + rootRect.width / 2;
+        const rootY = rootRect.top - containerRect.top + rootRect.height / 2;
+        const thirdX = thirdRect.left - containerRect.left + thirdRect.width / 2;
+        const thirdY = thirdRect.top - containerRect.top + thirdRect.height / 2;
+        
+        svgOverlay.setAttribute('width', containerRect.width);
+        svgOverlay.setAttribute('height', containerRect.height);
+        
+        // Draw line connecting the two notes
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', rootX);
+        line.setAttribute('y1', rootY);
+        line.setAttribute('x2', thirdX);
+        line.setAttribute('y2', thirdY);
+        // Vary color slightly for multiple diads
+        const hue = (index * 30) % 360;
+        line.setAttribute('stroke', `hsl(${hue}, 70%, 50%)`);
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('opacity', opacity * 0.6);
+        line.setAttribute('data-index', index);
+        svgOverlay.appendChild(line);
+    }
+    
+    // Draw SVG lines connecting triad notes
+    drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement, index = 0, opacity = 1) {
+        const container = fretboardElement.closest('.fretboard-container');
+        if (!container) return;
+        
+        let svgOverlay = container.querySelector('#triad-connections');
+        if (!svgOverlay) {
+            svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgOverlay.id = 'triad-connections';
+            svgOverlay.className = 'triad-connections-overlay';
+            svgOverlay.style.position = 'absolute';
+            svgOverlay.style.top = '0';
+            svgOverlay.style.left = '0';
+            svgOverlay.style.width = '100%';
+            svgOverlay.style.height = '100%';
+            svgOverlay.style.pointerEvents = 'none';
+            svgOverlay.style.zIndex = '2'; // Behind text, in front of note background
             container.style.position = 'relative';
             container.appendChild(svgOverlay);
         }
@@ -334,7 +535,13 @@ class TriadVisualizer {
         line1.setAttribute('stroke', '#f39c12');
         line1.setAttribute('stroke-width', '3');
         line1.setAttribute('stroke-linecap', 'round');
-        line1.setAttribute('opacity', '0.7');
+        // Vary color slightly for multiple triads
+        const hue = (index * 30) % 360;
+        const strokeColor = `hsl(${hue}, 70%, 50%)`;
+        
+        line1.setAttribute('stroke', strokeColor);
+        line1.setAttribute('opacity', opacity * 0.6);
+        line1.setAttribute('data-index', index);
         svgOverlay.appendChild(line1);
         
         // Connect third to fifth
@@ -343,10 +550,11 @@ class TriadVisualizer {
         line2.setAttribute('y1', thirdY);
         line2.setAttribute('x2', fifthX);
         line2.setAttribute('y2', fifthY);
-        line2.setAttribute('stroke', '#f39c12');
+        line2.setAttribute('stroke', strokeColor);
         line2.setAttribute('stroke-width', '3');
         line2.setAttribute('stroke-linecap', 'round');
-        line2.setAttribute('opacity', '0.7');
+        line2.setAttribute('opacity', opacity * 0.6);
+        line2.setAttribute('data-index', index);
         svgOverlay.appendChild(line2);
         
         // Connect fifth back to root (triangle)
@@ -355,10 +563,11 @@ class TriadVisualizer {
         line3.setAttribute('y1', fifthY);
         line3.setAttribute('x2', rootX);
         line3.setAttribute('y2', rootY);
-        line3.setAttribute('stroke', '#f39c12');
+        line3.setAttribute('stroke', strokeColor);
         line3.setAttribute('stroke-width', '3');
         line3.setAttribute('stroke-linecap', 'round');
-        line3.setAttribute('opacity', '0.7');
+        line3.setAttribute('opacity', opacity * 0.6);
+        line3.setAttribute('data-index', index);
         svgOverlay.appendChild(line3);
     }
     
