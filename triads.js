@@ -383,7 +383,7 @@ class TriadVisualizer {
     }
     
     // Highlight triad on fretboard with connecting lines
-    highlightTriad(fretboardElement, triad, visualizationMethod = 'connected', index = 0, opacity = 1) {
+    highlightTriad(fretboardElement, triad, visualizationMethod = 'connected', index = 0, opacity = 1, fillTriangle = false) {
         // Don't clear all - we want to show multiple triads
         // Only clear if this is the first one (index 0)
         if (index === 0) {
@@ -541,7 +541,7 @@ class TriadVisualizer {
     }
     
     // Draw SVG lines connecting triad notes
-    drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement, index = 0, opacity = 1) {
+    drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement, index = 0, opacity = 1, fillTriangle = false) {
         const container = fretboardElement.closest('.fretboard-container');
         if (!container) return;
         
@@ -561,8 +561,8 @@ class TriadVisualizer {
             container.appendChild(svgOverlay);
         }
         
-        // Clear previous lines
-        svgOverlay.innerHTML = '';
+        // Don't clear here - we want to accumulate lines for multiple triads
+        // The clearing is handled in updateAllVisualizations in script.js before calling highlightTriad
         
         // Get bounding boxes
         const rootRect = rootFret.getBoundingClientRect();
@@ -587,8 +587,8 @@ class TriadVisualizer {
         svgOverlay.setAttribute('width', containerRect.width);
         svgOverlay.setAttribute('height', containerRect.height);
         
-        // Don't clear - we want to accumulate lines for multiple triads
-        // svgOverlay.innerHTML = ''; // Removed - lines accumulate
+        // Don't clear here - we want to accumulate lines for multiple triads
+        // The clearing is handled in updateAllVisualizations in script.js before calling highlightTriad
         
         // Vary color slightly for multiple triads
         const hue = (index * 30) % 360;
@@ -684,6 +684,46 @@ class TriadVisualizer {
         drawLineWithGradient(rootX, rootY, thirdX, thirdY, rootRadius, thirdRadius, strokeColor, opacity * 0.6, 1);
         drawLineWithGradient(thirdX, thirdY, fifthX, fifthY, thirdRadius, fifthRadius, strokeColor, opacity * 0.6, 2);
         drawLineWithGradient(fifthX, fifthY, rootX, rootY, fifthRadius, rootRadius, strokeColor, opacity * 0.6, 3);
+        
+        // Fill triangle if requested
+        if (fillTriangle) {
+            const getEdgePointForFill = (centerX, centerY, targetX, targetY, radius) => {
+                const dx = targetX - centerX;
+                const dy = targetY - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance === 0) return { x: centerX, y: centerY };
+                const scale = radius / distance;
+                return {
+                    x: centerX + dx * scale,
+                    y: centerY + dy * scale
+                };
+            };
+            
+            // Calculate edge points for triangle fill
+            const rootToThird = getEdgePointForFill(rootX, rootY, thirdX, thirdY, rootRadius);
+            const thirdToRoot = getEdgePointForFill(thirdX, thirdY, rootX, rootY, thirdRadius);
+            const thirdToFifth = getEdgePointForFill(thirdX, thirdY, fifthX, fifthY, thirdRadius);
+            const fifthToThird = getEdgePointForFill(fifthX, fifthY, thirdX, thirdY, fifthRadius);
+            const fifthToRoot = getEdgePointForFill(fifthX, fifthY, rootX, rootY, fifthRadius);
+            const rootToFifth = getEdgePointForFill(rootX, rootY, fifthX, fifthY, rootRadius);
+            
+            // Create polygon for filled triangle
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const points = [
+                `${rootToThird.x},${rootToThird.y}`,
+                `${thirdToRoot.x},${thirdToRoot.y}`,
+                `${thirdToFifth.x},${thirdToFifth.y}`,
+                `${fifthToThird.x},${fifthToThird.y}`,
+                `${fifthToRoot.x},${fifthToRoot.y}`,
+                `${rootToFifth.x},${rootToFifth.y}`
+            ].join(' ');
+            polygon.setAttribute('points', points);
+            polygon.setAttribute('fill', strokeColor);
+            polygon.setAttribute('fill-opacity', opacity * 0.15); // Subtle fill
+            polygon.setAttribute('stroke', 'none');
+            polygon.setAttribute('style', 'pointer-events: none;');
+            svgOverlay.appendChild(polygon);
+        }
     }
     
     // Clear triad connection lines

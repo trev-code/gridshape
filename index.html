@@ -86,7 +86,14 @@
                     </div>
                 </div>
                 <div class="settings-group" id="grid-interval-settings" style="display: none;">
-                    <label for="grid-row-interval-input">Row Interval (semitones):</label>
+                    <label>Grid Interval Presets:</label>
+                    <div class="button-group">
+                        <button class="interval-preset-btn" data-preset="4ths" data-row="5" data-col="1">4ths</button>
+                        <button class="interval-preset-btn" data-preset="tritone" data-row="6" data-col="1">Tritone</button>
+                        <button class="interval-preset-btn" data-preset="5ths" data-row="7" data-col="1">5ths</button>
+                        <button class="interval-preset-btn" data-preset="midimech" data-row="5" data-col="2">Midimech</button>
+                    </div>
+                    <label for="grid-row-interval-input" style="margin-top: 10px;">Row Interval (semitones):</label>
                     <div class="number-input-wrapper">
                         <button class="number-input-btn" id="grid-row-interval-decrease">−</button>
                         <input type="number" id="grid-row-interval-input" min="1" max="12" value="1" class="settings-input">
@@ -98,6 +105,23 @@
                         <input type="number" id="grid-col-interval-input" min="1" max="12" value="1" class="settings-input">
                         <button class="number-input-btn" id="grid-col-interval-increase">+</button>
                     </div>
+                </div>
+                <div class="settings-group">
+                    <label>Fret Number Display:</label>
+                    <div class="button-group">
+                        <button class="fret-display-btn active" data-display="numbers">Numbers</button>
+                        <button class="fret-display-btn" data-display="pips">Pips</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label for="triad-opacity-slider">Triad Line Opacity:</label>
+                    <input type="range" id="triad-opacity-slider" min="0" max="100" value="60" class="settings-slider">
+                    <span id="triad-opacity-value">60%</span>
+                </div>
+                <div class="settings-group">
+                    <label>
+                        <input type="checkbox" id="triad-fill-triangles"> Fill Triad Triangles
+                    </label>
                 </div>
                 <div class="settings-group" id="tuning-selector-group" style="display: none;">
                     <label for="tuning-select">Tuning:</label>

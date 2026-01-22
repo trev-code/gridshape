@@ -384,6 +384,44 @@ h1 {
     border-color: #667eea;
 }
 
+.interval-preset-btn {
+    padding: 4px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    color: #333;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.interval-preset-btn:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+.fret-display-btn {
+    padding: 4px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    color: #333;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fret-display-btn:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+.fret-display-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
 .version-btn {
     background: white;
     color: #667eea;
@@ -539,6 +577,11 @@ h1 {
     gap: 2px;
     align-items: center;
     width: 100%;
+    position: relative;
+}
+
+.fretboard-header-row {
+    margin-bottom: 4px;
 }
 
 .string-label {
@@ -547,6 +590,52 @@ h1 {
     color: white;
     font-weight: bold;
     font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+.fret-number-label {
+    font-size: 0.7em;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    text-align: center;
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.column-label {
+    position: static;
+    transform: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.75em;
+    width: calc((100% - 60px) / var(--fret-count, 20));
+    min-width: 35px;
+    max-width: 50px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fret-pip {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    margin: 0 1px;
+}
+
+.fret-pips-single .fret-pip {
+    margin: 0;
+}
+
+.fret-pips-double .fret-pip {
+    margin: 0 1px;
 }
 
 .fret {
@@ -1303,14 +1392,36 @@ h1 {
 
 /* Pattern Highlighting */
 .pattern-note {
-    border: 3px solid #6f42c1 !important;
+    border: 3px solid var(--pattern-color, #6f42c1) !important;
     background: rgba(111, 66, 193, 0.2) !important;
 }
 
 .pattern-root {
-    border: 4px solid #5a32a3 !important;
+    border: 4px solid var(--pattern-color, #5a32a3) !important;
     background: rgba(90, 50, 163, 0.3) !important;
     font-weight: 700 !important;
+}
+
+.pattern-connections-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.settings-slider {
+    width: 100%;
+    max-width: 200px;
+    margin: 5px 0;
+}
+
+.settings-group span {
+    margin-left: 10px;
+    font-size: 0.9em;
+    color: #666;
 }
 
 /* Frequency Display */

@@ -234,6 +234,108 @@ class PatternVisualizer {
         });
     }
     
+    // Enhanced pattern visualization with connecting lines and multiple patterns
+    highlightPatternsEnhanced(fretboardElement, patterns, scaleNotes, rootNote) {
+        // Clear previous patterns
+        const allFrets = fretboardElement.querySelectorAll('.fret');
+        allFrets.forEach(fret => {
+            fret.classList.remove('pattern-note', 'pattern-root', 'pattern-connection');
+        });
+        
+        // Clear previous pattern connections
+        const container = fretboardElement.closest('.fretboard-container');
+        if (container) {
+            const existingOverlay = container.querySelector('#pattern-connections');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+        }
+        
+        // Show up to 3 patterns with different colors
+        const maxPatterns = Math.min(3, patterns.length);
+        const patternColors = [
+            'hsl(200, 70%, 50%)',  // Blue
+            'hsl(300, 70%, 50%)',  // Magenta
+            'hsl(60, 70%, 50%)'    // Yellow
+        ];
+        
+        // Create SVG overlay for pattern connections
+        let svgOverlay = null;
+        if (container) {
+            svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgOverlay.id = 'pattern-connections';
+            svgOverlay.className = 'pattern-connections-overlay';
+            svgOverlay.style.position = 'absolute';
+            svgOverlay.style.top = '0';
+            svgOverlay.style.left = '0';
+            svgOverlay.style.width = '100%';
+            svgOverlay.style.height = '100%';
+            svgOverlay.style.pointerEvents = 'none';
+            svgOverlay.style.zIndex = '1';
+            container.style.position = 'relative';
+            container.appendChild(svgOverlay);
+            
+            const containerRect = container.getBoundingClientRect();
+            svgOverlay.setAttribute('width', containerRect.width);
+            svgOverlay.setAttribute('height', containerRect.height);
+        }
+        
+        for (let pIdx = 0; pIdx < maxPatterns; pIdx++) {
+            const pattern = patterns[pIdx];
+            const color = patternColors[pIdx % patternColors.length];
+            
+            // Highlight notes in pattern
+            pattern.forEach((pos, idx) => {
+                const fret = fretboardElement.querySelector(
+                    `[data-string="${pos.string}"][data-fret="${pos.fret}"]`
+                );
+                if (fret) {
+                    const isRoot = idx === 0 || (pos.note && pos.note === rootNote);
+                    fret.classList.add(isRoot ? 'pattern-root' : 'pattern-note');
+                    fret.style.setProperty('--pattern-color', color);
+                }
+            });
+            
+            // Draw connecting lines between adjacent notes in pattern
+            if (svgOverlay && pattern.length > 1) {
+                const containerRect = container.getBoundingClientRect();
+                
+                for (let i = 0; i < pattern.length - 1; i++) {
+                    const pos1 = pattern[i];
+                    const pos2 = pattern[i + 1];
+                    
+                    const fret1 = fretboardElement.querySelector(
+                        `[data-string="${pos1.string}"][data-fret="${pos1.fret}"]`
+                    );
+                    const fret2 = fretboardElement.querySelector(
+                        `[data-string="${pos2.string}"][data-fret="${pos2.fret}"]`
+                    );
+                    
+                    if (fret1 && fret2) {
+                        const rect1 = fret1.getBoundingClientRect();
+                        const rect2 = fret2.getBoundingClientRect();
+                        
+                        const x1 = rect1.left - containerRect.left + rect1.width / 2;
+                        const y1 = rect1.top - containerRect.top + rect1.height / 2;
+                        const x2 = rect2.left - containerRect.left + rect2.width / 2;
+                        const y2 = rect2.top - containerRect.top + rect2.height / 2;
+                        
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', x1);
+                        line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', color);
+                        line.setAttribute('stroke-width', '2');
+                        line.setAttribute('stroke-opacity', '0.5');
+                        line.setAttribute('stroke-dasharray', '4,2');
+                        svgOverlay.appendChild(line);
+                    }
+                }
+            }
+        }
+    }
+    
     // Clear pattern highlighting
     clearPatterns(fretboardElement) {
         const allFrets = fretboardElement.querySelectorAll('.fret');

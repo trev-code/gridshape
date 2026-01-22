@@ -87,6 +87,9 @@ class FretboardVisualizer {
         this.customGridCols = 10;
         this.gridRowInterval = 1; // Semitones per row (1-12)
         this.gridColInterval = 1; // Semitones per column (1-12)
+        this.fretNumberDisplay = 'numbers'; // 'numbers' or 'pips'
+        this.triadLineOpacity = 0.6; // 0-1 for triad connection lines
+        this.triadFillTriangles = false; // Whether to fill/shade closed triangles
         
         this.init();
         } catch (error) {
@@ -135,9 +138,16 @@ class FretboardVisualizer {
             this.setupNoteShapeSelector();
             this.setupNoteFormatSelector();
             this.setupTuningSelector();
+            this.setupFretNumberDisplay();
+            this.setupTriadSettings();
             // Apply loaded settings
             this.applyColorPalette();
             this.applyNoteShape();
+            // Ensure grid interval inputs are set from loaded settings (after setupCustomGridSettings)
+            const rowIntervalInput = document.getElementById('grid-row-interval-input');
+            const colIntervalInput = document.getElementById('grid-col-interval-input');
+            if (rowIntervalInput) rowIntervalInput.value = this.gridRowInterval;
+            if (colIntervalInput) colIntervalInput.value = this.gridColInterval;
             console.log('Controls setup complete');
         } catch (error) {
             console.error('Error setting up controls:', error);
@@ -157,8 +167,9 @@ class FretboardVisualizer {
                 this.noteShape = settings.noteShape || this.noteShape;
                 this.customGridRows = settings.customGridRows || this.customGridRows;
                 this.customGridCols = settings.customGridCols || this.customGridCols;
-                this.gridRowInterval = settings.gridRowInterval || this.gridRowInterval;
-                this.gridColInterval = settings.gridColInterval || this.gridColInterval;
+                this.gridRowInterval = settings.gridRowInterval !== undefined ? settings.gridRowInterval : this.gridRowInterval;
+                this.gridColInterval = settings.gridColInterval !== undefined ? settings.gridColInterval : this.gridColInterval;
+                this.fretNumberDisplay = settings.fretNumberDisplay || this.fretNumberDisplay;
                 this.currentInstrument = settings.currentInstrument || this.currentInstrument;
                 this.currentTuning = settings.currentTuning || this.currentTuning;
                 this.currentKey = settings.currentKey || this.currentKey;
@@ -195,6 +206,9 @@ class FretboardVisualizer {
                 customGridCols: this.customGridCols,
                 gridRowInterval: this.gridRowInterval,
                 gridColInterval: this.gridColInterval,
+                fretNumberDisplay: this.fretNumberDisplay,
+                triadLineOpacity: this.triadLineOpacity,
+                triadFillTriangles: this.triadFillTriangles,
                 currentInstrument: this.currentInstrument,
                 currentKey: this.currentKey,
                 currentScale: this.currentScale,
@@ -309,6 +323,8 @@ class FretboardVisualizer {
     setupVersionSwitcher() {
         const buttons = document.querySelectorAll('.version-btn');
         console.log(`Found ${buttons.length} version buttons`);
+        // Clear all active classes first
+        buttons.forEach(btn => btn.classList.remove('active'));
         // Set active button based on loaded settings
         buttons.forEach(btn => {
             if (parseInt(btn.getAttribute('data-version')) === this.currentVersion) {
@@ -364,6 +380,60 @@ class FretboardVisualizer {
                 this.updateAllVisualizations();
             });
         });
+    }
+    
+    // Setup fret number display selector
+    setupFretNumberDisplay() {
+        const buttons = document.querySelectorAll('.fret-display-btn');
+        // Clear all active classes first
+        buttons.forEach(btn => btn.classList.remove('active'));
+        // Set active button based on loaded settings
+        buttons.forEach(btn => {
+            if (btn.getAttribute('data-display') === this.fretNumberDisplay) {
+                btn.classList.add('active');
+            }
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.fretNumberDisplay = btn.getAttribute('data-display');
+                this.saveSettings();
+                this.createFretboard();
+                this.updateAllVisualizations();
+            });
+        });
+    }
+    
+    // Setup triad settings (opacity slider and fill triangles checkbox)
+    setupTriadSettings() {
+        const opacitySlider = document.getElementById('triad-opacity-slider');
+        const opacityValue = document.getElementById('triad-opacity-value');
+        const fillCheckbox = document.getElementById('triad-fill-triangles');
+        
+        if (opacitySlider) {
+            // Set initial value from settings
+            opacitySlider.value = Math.round(this.triadLineOpacity * 100);
+            if (opacityValue) {
+                opacityValue.textContent = `${Math.round(this.triadLineOpacity * 100)}%`;
+            }
+            
+            opacitySlider.addEventListener('input', (e) => {
+                this.triadLineOpacity = parseInt(e.target.value) / 100;
+                if (opacityValue) {
+                    opacityValue.textContent = `${e.target.value}%`;
+                }
+                this.saveSettings();
+                this.updateAllVisualizations();
+            });
+        }
+        
+        if (fillCheckbox) {
+            fillCheckbox.checked = this.triadFillTriangles;
+            fillCheckbox.addEventListener('change', (e) => {
+                this.triadFillTriangles = e.target.checked;
+                this.saveSettings();
+                this.updateAllVisualizations();
+            });
+        }
     }
     
     // Convert note name to different formats
@@ -846,7 +916,30 @@ class FretboardVisualizer {
             }
         }
         
+        // Setup interval preset buttons
+        const presetButtons = document.querySelectorAll('.interval-preset-btn');
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rowInterval = parseInt(btn.getAttribute('data-row'));
+                const colInterval = parseInt(btn.getAttribute('data-col'));
+                this.gridRowInterval = rowInterval;
+                this.gridColInterval = colInterval;
+                
+                // Update inputs
+                if (rowIntervalInput) rowIntervalInput.value = rowInterval;
+                if (colIntervalInput) colIntervalInput.value = colInterval;
+                
+                this.saveSettings();
+                const currentInst = this.instrumentManager.getInstrument(this.currentInstrument);
+                if (currentInst && currentInst.type === 'grid') {
+                    this.createFretboard();
+                    this.updateAllVisualizations();
+                }
+            });
+        });
+        
         if (rowIntervalInput && colIntervalInput) {
+            // Set values from loaded settings
             rowIntervalInput.value = this.gridRowInterval;
             colIntervalInput.value = this.gridColInterval;
             
@@ -1025,10 +1118,10 @@ class FretboardVisualizer {
                 stringDiv.className = 'fretboard-string';
                 
                 // Row label
-                const label = document.createElement('div');
-                label.className = 'string-label';
-                label.textContent = `R${row + 1}`;
-                stringDiv.appendChild(label);
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'string-label';
+                rowLabel.textContent = `R${row + 1}`;
+                stringDiv.appendChild(rowLabel);
                 
                 // Create columns
                 for (let col = 0; col < cols; col++) {
@@ -1085,6 +1178,28 @@ class FretboardVisualizer {
                 
                 // Create frets (0 to numFrets)
                 for (let fret = 0; fret <= this.numFrets; fret++) {
+                    // Add fret number indicator for first string (bottom)
+                    if (i === tuning.length - 1 && fret > 0) {
+                        const fretLabel = document.createElement('div');
+                        fretLabel.className = 'fret-number-label';
+                        if (this.fretNumberDisplay === 'pips') {
+                            // Pips: 3,5,7,9,15,17,19,21 get one dot; 12,24 get two dots
+                            if (fret === 12 || fret === 24) {
+                                fretLabel.innerHTML = '<span class="fret-pip"></span><span class="fret-pip"></span>';
+                                fretLabel.classList.add('fret-pips-double');
+                            } else if ([3, 5, 7, 9, 15, 17, 19, 21].includes(fret)) {
+                                fretLabel.innerHTML = '<span class="fret-pip"></span>';
+                                fretLabel.classList.add('fret-pips-single');
+                            } else {
+                                fretLabel.textContent = '';
+                            }
+                        } else {
+                            // Numbers
+                            fretLabel.textContent = fret;
+                        }
+                        fretLabel.setAttribute('data-fret', fret);
+                        // Position will be handled by CSS
+                    }
                     const fretDiv = document.createElement('div');
                     const note = this.instrumentManager.getNote(tuning, stringIndex, fret);
                     
@@ -1099,6 +1214,29 @@ class FretboardVisualizer {
                     fretDiv.setAttribute('data-string', stringIndex);
                     fretDiv.setAttribute('data-fret', fret);
                     fretDiv.setAttribute('title', `${openNote} string, fret ${fret}: ${note}`);
+                    
+                    // Add fret number indicator for first string (bottom/lowest)
+                    if (i === tuning.length - 1 && fret > 0) {
+                        const fretLabel = document.createElement('div');
+                        fretLabel.className = 'fret-number-label';
+                        if (this.fretNumberDisplay === 'pips') {
+                            // Pips: 3,5,7,9,15,17,19,21 get one dot; 12,24 get two dots
+                            if (fret === 12 || fret === 24) {
+                                fretLabel.innerHTML = '<span class="fret-pip"></span><span class="fret-pip"></span>';
+                                fretLabel.classList.add('fret-pips-double');
+                            } else if ([3, 5, 7, 9, 15, 17, 19, 21].includes(fret)) {
+                                fretLabel.innerHTML = '<span class="fret-pip"></span>';
+                                fretLabel.classList.add('fret-pips-single');
+                            } else {
+                                fretLabel.textContent = '';
+                            }
+                        } else {
+                            // Numbers
+                            fretLabel.textContent = fret;
+                        }
+                        fretLabel.setAttribute('data-fret', fret);
+                        fretDiv.appendChild(fretLabel);
+                    }
                     
                     stringDiv.appendChild(fretDiv);
                 }
@@ -1251,16 +1389,18 @@ class FretboardVisualizer {
         }
         
         // Apply triad/diad visualization (works on all layouts including grids)
-        if (this.features.triads && this.selectedTriads.length > 0) {
-            try {
-                const triads = this.triadVisualizer.getTriadsInScale(this.currentKey, this.currentScale);
-                const scaleNotes = this.scaleManager.getScaleNotes(this.currentKey, this.currentScale);
-                
-                // Clear previous connections
-                this.triadVisualizer.clearTriadConnections();
-                
-                // Process each selected triad/diad
-                this.selectedTriads.forEach(selectedName => {
+        // Only show if feature is enabled AND triads are selected
+        if (this.features.triads) {
+            if (this.selectedTriads.length > 0) {
+                try {
+                    const triads = this.triadVisualizer.getTriadsInScale(this.currentKey, this.currentScale);
+                    const scaleNotes = this.scaleManager.getScaleNotes(this.currentKey, this.currentScale);
+                    
+                    // Clear previous connections at the start
+                    this.triadVisualizer.clearTriadConnections();
+                    
+                    // Process each selected triad/diad
+                    this.selectedTriads.forEach(selectedName => {
                     // Check if it's a triad
                     let triad = triads.find(t => t.name === selectedName);
                     let isDiad = false;
@@ -1295,18 +1435,28 @@ class FretboardVisualizer {
                         if (positions && positions.length > 0 && Array.isArray(positions)) {
                             // Show all positions for this triad/diad (don't limit - show all selected)
                             positions.forEach((pos, idx) => {
-                                // Use different colors/opacity for multiple positions
-                                const opacity = positions.length > 1 ? 0.6 + (idx % 3) * 0.1 : 1;
-                                this.triadVisualizer.highlightTriad(fretboard, pos, this.triadMethod, idx, opacity);
+                                // Use different colors/opacity for multiple positions, multiplied by user setting
+                                const baseOpacity = positions.length > 1 ? 0.6 + (idx % 3) * 0.1 : 1;
+                                const finalOpacity = baseOpacity * this.triadLineOpacity;
+                                this.triadVisualizer.highlightTriad(fretboard, pos, this.triadMethod, idx, finalOpacity, this.triadFillTriangles);
                             });
                         }
                     }
                 });
-            } catch (error) {
-                console.error('Error highlighting triads:', error);
-                if (window.debugConsole) {
-                    window.debugConsole.addEntry('error', `Triad highlighting error: ${error.message}`);
+                } catch (error) {
+                    console.error('Error highlighting triads:', error);
+                    if (window.debugConsole) {
+                        window.debugConsole.addEntry('error', `Triad highlighting error: ${error.message}`);
+                    }
+                    this.features.triads = false;
+                    const btn = document.getElementById('toggle-triads');
+                    if (btn) btn.classList.remove('active');
                 }
+            } else {
+                // No triads selected, disable feature
+                this.features.triads = false;
+                const btn = document.getElementById('toggle-triads');
+                if (btn) btn.classList.remove('active');
             }
         } else {
             // Clear triad connections when triads are disabled
