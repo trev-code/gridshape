@@ -10,12 +10,14 @@ class FretboardVisualizer {
         this.patternVisualizer = new PatternVisualizer(this.scaleManager, this.instrumentManager);
         this.frequencyVisualizer = new FrequencyVisualizer(this.scaleManager, this.instrumentManager);
         this.tuningEditor = new TuningEditor(this.instrumentManager);
+        this.noteInteractionManager = new NoteInteractionManager(this.scaleManager, this.instrumentManager, this.intervalVisualizer);
         
         this.numFrets = 20;
         this.currentVersion = 3;
         this.currentInstrument = 'Guitar (Standard)';
         this.currentKey = 'C';
         this.currentScale = 'Major (Ionian)';
+        this.currentPalette = 'default';
         
         // Feature toggles
         this.features = {
@@ -33,6 +35,7 @@ class FretboardVisualizer {
     
     init() {
         this.setupControls();
+        this.applyColorPalette(); // Apply initial palette
         this.createFretboard();
         this.updateAllVisualizations();
         this.setupTuningEditor();
@@ -48,6 +51,7 @@ class FretboardVisualizer {
         this.setupFeatureToggles();
         this.setupChordSelector();
         this.setupSettingsToggle();
+        this.setupColorPalette();
     }
     
     // Setup settings toggle
@@ -61,6 +65,24 @@ class FretboardVisualizer {
                 panel.style.display = isVisible ? 'none' : 'block';
             });
         }
+    }
+    
+    // Setup color palette selector
+    setupColorPalette() {
+        const buttons = document.querySelectorAll('.palette-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentPalette = btn.getAttribute('data-palette');
+                this.applyColorPalette();
+            });
+        });
+    }
+    
+    // Apply color palette to document
+    applyColorPalette() {
+        document.body.setAttribute('data-palette', this.currentPalette);
     }
     
     // Setup version switcher (visual style)
@@ -336,6 +358,17 @@ class FretboardVisualizer {
             
             fretboard.appendChild(stringDiv);
         }
+        
+        // Setup note interactions after fretboard is created
+        this.setupNoteInteractions();
+    }
+    
+    // Setup note click interactions
+    setupNoteInteractions() {
+        const fretboard = document.getElementById('fretboard');
+        if (fretboard && this.noteInteractionManager) {
+            this.noteInteractionManager.setupNoteClicks(fretboard);
+        }
     }
     
     // Update all visualizations
@@ -355,6 +388,11 @@ class FretboardVisualizer {
         this.intervalVisualizer.clearIntervals(fretboard);
         this.patternVisualizer.clearPatterns(fretboard);
         this.frequencyVisualizer.clearFrequency(fretboard);
+        
+        // Clear note selection
+        if (this.noteInteractionManager) {
+            this.noteInteractionManager.clearSelection(fretboard);
+        }
         
         // Apply scale highlighting
         if (this.features.scale && scaleNotes.length > 0) {
@@ -395,6 +433,9 @@ class FretboardVisualizer {
         
         // Update circle highlights
         this.updateCircleHighlights();
+        
+        // Re-setup note interactions after fretboard update
+        this.setupNoteInteractions();
     }
 }
 

@@ -1,0 +1,42 @@
+# Cursor Rules for Fretboard Scale Visualizer
+
+## Project Context
+Before making changes, review `.cursor-context.md` for:
+- Project goals and architecture
+- Feature status and recent decisions
+- Code patterns and conventions
+- Testing checklist
+
+## Key Principles
+1. **Modularity**: Keep features in separate files
+2. **No External Dependencies**: Pure JavaScript only
+3. **Maintainability**: Code should be easy to understand and modify
+4. **Extensibility**: Easy to add new scales, instruments, visualizations
+
+## Architecture
+- Each feature in its own file (scales.js, instruments.js, etc.)
+- Main controller in script.js integrates all modules
+- Visualizations are independent and toggleable
+- Note interactions use event delegation
+
+## When Adding Features
+1. Create new module file if needed
+2. Integrate in script.js constructor and init()
+3. Add UI controls in index.html if needed
+4. Add styles in styles.css
+5. Update .cursor-context.md with new feature
+6. Update README.md feature list
+
+## Code Style
+- Classes: PascalCase
+- Methods: camelCase
+- CSS: kebab-case
+- Keep functions focused and single-purpose
+- Add comments for complex logic
+
+## Testing
+Verify new features work with:
+- All instrument types
+- Different keys and scales
+- Note click interactions
+- Mobile responsiveness

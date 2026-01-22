@@ -13,6 +13,34 @@
             <p class="subtitle">Visualize scales and modes on any stringed instrument</p>
         </header>
         
+        <!-- Settings Bar - Moved to top -->
+        <div class="settings-bar">
+            <button class="settings-toggle" id="settings-toggle">⚙️ Settings</button>
+            <div class="settings-panel" id="settings-panel" style="display: none;">
+                <h3>Settings</h3>
+                <div class="settings-group">
+                    <label>Visual Style:</label>
+                    <div class="button-group">
+                        <button class="version-btn" data-version="1">Classic</button>
+                        <button class="version-btn" data-version="2">Colorful</button>
+                        <button class="version-btn active" data-version="3">Minimal</button>
+                        <button class="version-btn" data-version="4">Bold</button>
+                        <button class="version-btn" data-version="5">Circular</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Color Palette:</label>
+                    <div class="button-group">
+                        <button class="palette-btn active" data-palette="default">Default</button>
+                        <button class="palette-btn" data-palette="warm">Warm</button>
+                        <button class="palette-btn" data-palette="cool">Cool</button>
+                        <button class="palette-btn" data-palette="vibrant">Vibrant</button>
+                        <button class="palette-btn" data-palette="monochrome">Monochrome</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Controls Section -->
         <div class="controls-section">
             <div class="control-group">
@@ -31,53 +59,28 @@
             </div>
         </div>
         
-        <!-- Settings Bar -->
-        <div class="settings-bar">
-            <button class="settings-toggle" id="settings-toggle">⚙️ Settings</button>
-            <div class="settings-panel" id="settings-panel" style="display: none;">
-                <h3>Settings</h3>
-                <div class="settings-group">
-                    <label>Visual Style:</label>
-                    <div class="button-group">
-                        <button class="version-btn" data-version="1">Classic</button>
-                        <button class="version-btn" data-version="2">Colorful</button>
-                        <button class="version-btn active" data-version="3">Minimal</button>
-                        <button class="version-btn" data-version="4">Bold</button>
-                        <button class="version-btn" data-version="5">Circular</button>
-                    </div>
-                </div>
-                <div class="settings-group">
-                    <label>Features:</label>
-                    <div class="feature-toggles">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="toggle-scale" checked>
-                            <span>Scale Highlighting</span>
-                        </label>
-                        <label class="toggle-label">
-                            <input type="checkbox" id="toggle-chords">
-                            <span>Chord Overlay</span>
-                        </label>
-                        <label class="toggle-label">
-                            <input type="checkbox" id="toggle-intervals">
-                            <span>Interval Highlighting</span>
-                        </label>
-                        <label class="toggle-label">
-                            <input type="checkbox" id="toggle-patterns">
-                            <span>Scale Patterns</span>
-                        </label>
-                        <label class="toggle-label">
-                            <input type="checkbox" id="toggle-frequency">
-                            <span>Note Frequency</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="settings-group">
-                    <label>Chord Selection:</label>
-                    <select id="chord-select" class="control-select">
-                        <option value="">None</option>
-                    </select>
-                </div>
-            </div>
+        <!-- Feature Toggles Bar - Horizontal above fretboard -->
+        <div class="feature-toggles-bar">
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-scale" checked>
+                <span>Scale</span>
+            </label>
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-chords">
+                <span>Chords</span>
+            </label>
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-intervals">
+                <span>Intervals</span>
+            </label>
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-patterns">
+                <span>Patterns</span>
+            </label>
+            <label class="toggle-label-horizontal">
+                <input type="checkbox" id="toggle-frequency">
+                <span>Frequency</span>
+            </label>
         </div>
         
         <!-- Circle Visualizations -->
@@ -102,6 +105,14 @@
         <div class="fretboard-container">
             <div id="fretboard" class="fretboard version-3"></div>
         </div>
+        
+        <!-- Chord Selection Bar - Horizontal at bottom -->
+        <div class="chord-selection-bar">
+            <label for="chord-select" class="chord-label">Chord:</label>
+            <select id="chord-select" class="chord-select">
+                <option value="">None</option>
+            </select>
+        </div>
     </div>
 
     <!-- Load modules in order -->
@@ -114,6 +125,7 @@
     <script src="patterns.js"></script>
     <script src="frequency.js"></script>
     <script src="tuning-editor.js"></script>
+    <script src="note-interactions.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
