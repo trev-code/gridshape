@@ -38,6 +38,10 @@
                         <button class="palette-btn" data-palette="monochrome">Monochrome</button>
                     </div>
                 </div>
+                <div class="settings-group">
+                    <label for="fret-count-input">Number of Frets:</label>
+                    <input type="number" id="fret-count-input" min="5" max="30" value="20" class="settings-input">
+                </div>
             </div>
         </div>
         
@@ -59,7 +63,25 @@
             </div>
         </div>
         
-        <!-- Feature Toggles Bar - Horizontal above fretboard -->
+        <!-- Circle Visualizations -->
+        <div class="circle-section">
+            <div class="circle-controls">
+                <button class="circle-toggle" id="toggle-circle-fifths">Show Circle of Fifths</button>
+                <button class="circle-toggle" id="toggle-chromatic">Show Chromatic Circle</button>
+            </div>
+            <div class="circles-container">
+                <div id="circle-of-fifths" class="circle-container" style="display: none;"></div>
+                <div id="chromatic-circle" class="circle-container" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Tuning Editor -->
+        <div class="tuning-section">
+            <button class="tuning-toggle" id="toggle-tuning-editor">Custom Tuning Editor</button>
+            <div id="tuning-editor-container" style="display: none;"></div>
+        </div>
+
+        <!-- Feature Toggles Bar - Right above fretboard -->
         <div class="feature-toggles-bar">
             <label class="toggle-label-horizontal">
                 <input type="checkbox" id="toggle-scale" checked>
@@ -86,39 +108,6 @@
                 <span>Triads</span>
             </label>
         </div>
-        
-        <!-- Triad Controls -->
-        <div class="triad-controls-bar" id="triad-controls" style="display: none;">
-            <label for="triad-select" class="triad-label">Triad:</label>
-            <select id="triad-select" class="triad-select">
-                <option value="">None</option>
-            </select>
-            <label for="triad-method-select" class="triad-label">Method:</label>
-            <select id="triad-method-select" class="triad-select">
-                <option value="connected">Connected</option>
-                <option value="close-voicing">Close Voicing</option>
-                <option value="spread">Spread</option>
-                <option value="string-sets">String Sets</option>
-            </select>
-        </div>
-        
-        <!-- Circle Visualizations -->
-        <div class="circle-section">
-            <div class="circle-controls">
-                <button class="circle-toggle" id="toggle-circle-fifths">Show Circle of Fifths</button>
-                <button class="circle-toggle" id="toggle-chromatic">Show Chromatic Circle</button>
-            </div>
-            <div class="circles-container">
-                <div id="circle-of-fifths" class="circle-container" style="display: none;"></div>
-                <div id="chromatic-circle" class="circle-container" style="display: none;"></div>
-            </div>
-        </div>
-        
-        <!-- Tuning Editor -->
-        <div class="tuning-section">
-            <button class="tuning-toggle" id="toggle-tuning-editor">Custom Tuning Editor</button>
-            <div id="tuning-editor-container" style="display: none;"></div>
-        </div>
 
         <!-- Fretboard Container -->
         <div class="fretboard-container">
@@ -127,14 +116,34 @@
                     Loading fretboard...
                 </div>
             </div>
+            <!-- SVG overlay for triad connections -->
+            <svg id="triad-connections" class="triad-connections-overlay"></svg>
         </div>
         
-        <!-- Chord Selection Bar - Horizontal at bottom -->
-        <div class="chord-selection-bar">
-            <label for="chord-select" class="chord-label">Chord:</label>
-            <select id="chord-select" class="chord-select">
-                <option value="">None</option>
-            </select>
+        <!-- Legend - Below fretboard -->
+        <div id="legend-container" class="legend-container-bottom"></div>
+        
+        <!-- Bottom Controls Bar - Chord and Triad selectors -->
+        <div class="bottom-controls-bar">
+            <div class="control-item">
+                <label for="chord-select" class="control-label">Chord:</label>
+                <select id="chord-select" class="control-select-small">
+                    <option value="">None</option>
+                </select>
+            </div>
+            <div class="control-item" id="triad-controls" style="display: none;">
+                <label for="triad-select" class="control-label">Triad:</label>
+                <select id="triad-select" class="control-select-small">
+                    <option value="">None</option>
+                </select>
+                <label for="triad-method-select" class="control-label">Method:</label>
+                <select id="triad-method-select" class="control-select-small">
+                    <option value="connected">Connected</option>
+                    <option value="close-voicing">Close Voicing</option>
+                    <option value="spread">Spread</option>
+                    <option value="string-sets">String Sets</option>
+                </select>
+            </div>
         </div>
     </div>
 

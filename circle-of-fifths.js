@@ -1,21 +1,25 @@
-// Circle of Fifths and Chromatic Circle Visualizations
+// Circle of Fifths and Chromatic Circle Visualizations - Interactive
 class CircleVisualizer {
-    constructor() {
+    constructor(scaleManager) {
+        this.scaleManager = scaleManager;
         this.allNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         this.circleOfFifths = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'];
         this.circleOfFourths = ['C', 'F', 'A#', 'D#', 'G#', 'C#', 'F#', 'B', 'E', 'A', 'D', 'G'];
+        this.currentKey = 'C';
+        this.currentScale = 'Major (Ionian)';
     }
     
-    // Create circle of fifths visualization
+    // Create circle of fifths visualization with interactivity
     createCircleOfFifths(container, radius = 150, centerX = 200, centerY = 200) {
         container.innerHTML = '';
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', centerX * 2);
         svg.setAttribute('height', centerY * 2);
-        svg.setAttribute('class', 'circle-svg');
+        svg.setAttribute('class', 'circle-svg interactive-circle');
+        svg.setAttribute('data-circle-type', 'fifths');
         
         const center = { x: centerX, y: centerY };
-        const noteRadius = 30;
+        const noteRadius = 35;
         const angleStep = (2 * Math.PI) / 12;
         
         // Draw circle background
@@ -54,6 +58,12 @@ class CircleVisualizer {
             const x = center.x + radius * Math.cos(angle);
             const y = center.y + radius * Math.sin(angle);
             
+            // Note circle group for click handling
+            const noteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            noteGroup.setAttribute('class', 'circle-note-group');
+            noteGroup.setAttribute('data-note', note);
+            noteGroup.style.cursor = 'pointer';
+            
             // Note circle
             const noteCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             noteCircle.setAttribute('cx', x);
@@ -64,19 +74,35 @@ class CircleVisualizer {
             noteCircle.setAttribute('stroke-width', '2');
             noteCircle.setAttribute('class', 'circle-note');
             noteCircle.setAttribute('data-note', note);
-            svg.appendChild(noteCircle);
+            noteGroup.appendChild(noteCircle);
             
             // Note text
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.setAttribute('x', x);
-            text.setAttribute('y', y);
+            text.setAttribute('y', y - 8);
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('font-size', '14');
-            text.setAttribute('font-weight', '600');
+            text.setAttribute('font-size', '16');
+            text.setAttribute('font-weight', '700');
             text.setAttribute('fill', '#333');
+            text.setAttribute('class', 'circle-note-name');
             text.textContent = note;
-            svg.appendChild(text);
+            noteGroup.appendChild(text);
+            
+            // Scale degree text (will be updated)
+            const degreeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            degreeText.setAttribute('x', x);
+            degreeText.setAttribute('y', y + 12);
+            degreeText.setAttribute('text-anchor', 'middle');
+            degreeText.setAttribute('dominant-baseline', 'middle');
+            degreeText.setAttribute('font-size', '11');
+            degreeText.setAttribute('font-weight', '500');
+            degreeText.setAttribute('fill', '#666');
+            degreeText.setAttribute('class', 'circle-degree');
+            degreeText.textContent = '';
+            noteGroup.appendChild(degreeText);
+            
+            svg.appendChild(noteGroup);
         });
         
         // Center label
@@ -92,18 +118,25 @@ class CircleVisualizer {
         svg.appendChild(centerText);
         
         container.appendChild(svg);
+        
+        // Setup click handlers
+        this.setupCircleClicks(container, 'fifths');
+        
+        // Update with current scale
+        this.updateCircleHighlights(container, 'fifths');
     }
     
-    // Create chromatic circle visualization
+    // Create chromatic circle visualization with interactivity
     createChromaticCircle(container, radius = 150, centerX = 200, centerY = 200) {
         container.innerHTML = '';
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', centerX * 2);
         svg.setAttribute('height', centerY * 2);
-        svg.setAttribute('class', 'circle-svg');
+        svg.setAttribute('class', 'circle-svg interactive-circle');
+        svg.setAttribute('data-circle-type', 'chromatic');
         
         const center = { x: centerX, y: centerY };
-        const noteRadius = 30;
+        const noteRadius = 35;
         const angleStep = (2 * Math.PI) / 12;
         
         // Draw circle background
@@ -144,6 +177,12 @@ class CircleVisualizer {
             
             const isNatural = !note.includes('#');
             
+            // Note circle group for click handling
+            const noteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            noteGroup.setAttribute('class', 'circle-note-group');
+            noteGroup.setAttribute('data-note', note);
+            noteGroup.style.cursor = 'pointer';
+            
             // Note circle
             const noteCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             noteCircle.setAttribute('cx', x);
@@ -154,19 +193,35 @@ class CircleVisualizer {
             noteCircle.setAttribute('stroke-width', '2');
             noteCircle.setAttribute('class', 'circle-note');
             noteCircle.setAttribute('data-note', note);
-            svg.appendChild(noteCircle);
+            noteGroup.appendChild(noteCircle);
             
             // Note text
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.setAttribute('x', x);
-            text.setAttribute('y', y);
+            text.setAttribute('y', y - 8);
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('font-size', '14');
-            text.setAttribute('font-weight', '600');
+            text.setAttribute('font-size', '16');
+            text.setAttribute('font-weight', '700');
             text.setAttribute('fill', isNatural ? '#333' : '#666');
+            text.setAttribute('class', 'circle-note-name');
             text.textContent = note;
-            svg.appendChild(text);
+            noteGroup.appendChild(text);
+            
+            // Scale degree text (will be updated)
+            const degreeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            degreeText.setAttribute('x', x);
+            degreeText.setAttribute('y', y + 12);
+            degreeText.setAttribute('text-anchor', 'middle');
+            degreeText.setAttribute('dominant-baseline', 'middle');
+            degreeText.setAttribute('font-size', '11');
+            degreeText.setAttribute('font-weight', '500');
+            degreeText.setAttribute('fill', '#666');
+            degreeText.setAttribute('class', 'circle-degree');
+            degreeText.textContent = '';
+            noteGroup.appendChild(degreeText);
+            
+            svg.appendChild(noteGroup);
         });
         
         // Center label
@@ -180,9 +235,103 @@ class CircleVisualizer {
         centerText.setAttribute('fill', '#764ba2');
         centerText.textContent = 'Chromatic Circle';
         svg.appendChild(centerText);
+        
+        container.appendChild(svg);
+        
+        // Setup click handlers
+        this.setupCircleClicks(container, 'chromatic');
+        
+        // Update with current scale
+        this.updateCircleHighlights(container, 'chromatic');
     }
     
-    // Highlight note on circle
+    // Setup click handlers for circles
+    setupCircleClicks(container, circleType) {
+        const noteGroups = container.querySelectorAll('.circle-note-group');
+        noteGroups.forEach(group => {
+            group.addEventListener('click', (e) => {
+                const note = group.getAttribute('data-note');
+                if (note && window.fretboardVisualizer) {
+                    // Update key selector
+                    const keySelect = document.getElementById('key-select');
+                    if (keySelect) {
+                        keySelect.value = note;
+                        // Trigger change event
+                        keySelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+            
+            // Add hover effect
+            group.addEventListener('mouseenter', () => {
+                const circle = group.querySelector('.circle-note');
+                circle.setAttribute('stroke-width', '3');
+            });
+            
+            group.addEventListener('mouseleave', () => {
+                const circle = group.querySelector('.circle-note');
+                circle.setAttribute('stroke-width', '2');
+            });
+        });
+    }
+    
+    // Update circle highlights and scale degrees
+    updateCircleHighlights(container, circleType, key = null, scale = null) {
+        if (!container || container.style.display === 'none') return;
+        
+        const currentKey = key || this.currentKey;
+        const currentScale = scale || this.currentScale;
+        
+        const scaleNotes = this.scaleManager.getScaleNotes(currentKey, currentScale);
+        const noteGroups = container.querySelectorAll('.circle-note-group');
+        
+        noteGroups.forEach(group => {
+            const note = group.getAttribute('data-note');
+            const circle = group.querySelector('.circle-note');
+            const degreeText = group.querySelector('.circle-degree');
+            
+            if (!note || !circle) return;
+            
+            // Reset styling
+            circle.classList.remove('highlighted', 'root-highlighted');
+            circle.setAttribute('fill', circle.getAttribute('data-original-fill') || '#fff');
+            circle.setAttribute('stroke', circle.getAttribute('data-original-stroke') || '#667eea');
+            
+            const isInScale = scaleNotes.includes(note);
+            const isRoot = note === currentKey;
+            const scaleDegree = isInScale ? scaleNotes.indexOf(note) + 1 : 0;
+            
+            // Update scale degree display
+            if (degreeText) {
+                if (scaleDegree > 0) {
+                    degreeText.textContent = scaleDegree;
+                    degreeText.setAttribute('fill', isRoot ? '#ffc107' : '#28a745');
+                } else {
+                    degreeText.textContent = '';
+                }
+            }
+            
+            // Highlight based on scale membership
+            if (isInScale) {
+                if (isRoot) {
+                    circle.classList.add('root-highlighted');
+                    circle.setAttribute('fill', '#fff3cd');
+                    circle.setAttribute('stroke', '#ffc107');
+                    circle.setAttribute('stroke-width', '3');
+                } else {
+                    circle.classList.add('highlighted');
+                    circle.setAttribute('fill', '#d4edda');
+                    circle.setAttribute('stroke', '#28a745');
+                }
+            } else {
+                circle.setAttribute('fill', '#f8f9fa');
+                circle.setAttribute('stroke', '#dee2e6');
+                circle.setAttribute('opacity', '0.5');
+            }
+        });
+    }
+    
+    // Highlight note on circle (legacy method for compatibility)
     highlightNote(container, note, isRoot = false) {
         const circles = container.querySelectorAll('.circle-note');
         circles.forEach(circle => {
@@ -199,5 +348,11 @@ class CircleVisualizer {
         circles.forEach(circle => {
             circle.classList.remove('highlighted', 'root-highlighted');
         });
+    }
+    
+    // Set current key and scale for updates
+    setCurrentKeyScale(key, scale) {
+        this.currentKey = key;
+        this.currentScale = scale;
     }
 }

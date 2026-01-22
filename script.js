@@ -33,9 +33,9 @@ class FretboardVisualizer {
             
             this.instrumentManager = new InstrumentManager();
             this.scaleManager = new ScaleManager();
-            this.scaleVisualizer = new ScaleVisualizer();
-            this.circleVisualizer = new CircleVisualizer();
-            this.chordVisualizer = new ChordVisualizer(this.scaleManager);
+        this.scaleVisualizer = new ScaleVisualizer();
+        this.circleVisualizer = new CircleVisualizer(this.scaleManager);
+        this.chordVisualizer = new ChordVisualizer(this.scaleManager);
             this.intervalVisualizer = new IntervalVisualizer(this.scaleManager);
             this.patternVisualizer = new PatternVisualizer(this.scaleManager, this.instrumentManager);
             this.frequencyVisualizer = new FrequencyVisualizer(this.scaleManager, this.instrumentManager);
@@ -104,6 +104,7 @@ class FretboardVisualizer {
             this.setupChordSelector();
             this.setupSettingsToggle();
             this.setupColorPalette();
+            this.setupFretCountInput();
             console.log('Controls setup complete');
         } catch (error) {
             console.error('Error setting up controls:', error);
@@ -139,6 +140,27 @@ class FretboardVisualizer {
                 this.applyColorPalette();
             });
         });
+    }
+    
+    // Setup fret count input
+    setupFretCountInput() {
+        const input = document.getElementById('fret-count-input');
+        if (input) {
+            input.value = this.numFrets;
+            input.addEventListener('change', (e) => {
+                const newCount = parseInt(e.target.value);
+                if (newCount >= 5 && newCount <= 30) {
+                    this.numFrets = newCount;
+                    // Update CSS variable for responsive sizing
+                    document.documentElement.style.setProperty('--fret-count', newCount);
+                    // Recreate fretboard with new count
+                    this.createFretboard();
+                    this.updateAllVisualizations();
+                } else {
+                    e.target.value = this.numFrets; // Reset to current value
+                }
+            });
+        }
     }
     
     // Apply color palette to document
@@ -232,6 +254,7 @@ class FretboardVisualizer {
             this.updateAllVisualizations();
             this.updateChordSelector();
             this.updateTriadSelector();
+            this.updateCircleHighlights(); // Update circles when key changes
         });
     }
     
@@ -256,6 +279,7 @@ class FretboardVisualizer {
             this.updateAllVisualizations();
             this.updateChordSelector();
             this.updateTriadSelector();
+            this.updateCircleHighlights(); // Update circles when scale changes
         });
     }
     
@@ -277,13 +301,25 @@ class FretboardVisualizer {
                 checkbox.addEventListener('change', (e) => {
                     this.features[feature] = e.target.checked;
                     
-                    // Show/hide triad controls
+                    // Show/hide triad controls in bottom bar
                     if (feature === 'triads') {
                         const triadControls = document.getElementById('triad-controls');
                         if (triadControls) {
                             triadControls.style.display = e.target.checked ? 'flex' : 'none';
                         }
+                        // Auto-select first triad if none selected and triads enabled
+                        if (e.target.checked && !this.currentTriad) {
+                            this.updateTriadSelector();
+                            const select = document.getElementById('triad-select');
+                            if (select && select.options.length > 1) {
+                                select.value = select.options[1].value;
+                                this.currentTriad = select.value;
+                            }
+                        }
                     }
+                    
+                    // Update legend when toggling features
+                    this.updateLegend();
                     
                     this.updateAllVisualizations();
                 });
@@ -383,12 +419,17 @@ class FretboardVisualizer {
         const fifthsContainer = document.getElementById('circle-of-fifths');
         const chromaticContainer = document.getElementById('chromatic-circle');
         
+        // Update circle visualizer with current key/scale
+        this.circleVisualizer.setCurrentKeyScale(this.currentKey, this.currentScale);
+        
         if (fifthsToggle && fifthsContainer) {
             fifthsToggle.addEventListener('click', () => {
                 const isVisible = fifthsContainer.style.display !== 'none';
                 fifthsContainer.style.display = isVisible ? 'none' : 'block';
                 if (!isVisible) {
                     this.circleVisualizer.createCircleOfFifths(fifthsContainer);
+                } else {
+                    // Update even when hiding to ensure it's current when shown again
                     this.updateCircleHighlights();
                 }
                 fifthsToggle.textContent = isVisible ? 'Show Circle of Fifths' : 'Hide Circle of Fifths';
@@ -401,6 +442,8 @@ class FretboardVisualizer {
                 chromaticContainer.style.display = isVisible ? 'none' : 'block';
                 if (!isVisible) {
                     this.circleVisualizer.createChromaticCircle(chromaticContainer);
+                } else {
+                    // Update even when hiding
                     this.updateCircleHighlights();
                 }
                 chromaticToggle.textContent = isVisible ? 'Show Chromatic Circle' : 'Hide Chromatic Circle';
@@ -408,28 +451,29 @@ class FretboardVisualizer {
         }
     }
     
-    // Update circle highlights
+    // Update circle highlights and scale degrees
     updateCircleHighlights() {
-        const scaleNotes = this.scaleManager.getScaleNotes(this.currentKey, this.currentScale);
         const fifthsContainer = document.getElementById('circle-of-fifths');
         const chromaticContainer = document.getElementById('chromatic-circle');
         
+        // Update circle visualizer with current key/scale
+        this.circleVisualizer.setCurrentKeyScale(this.currentKey, this.currentScale);
+        
         if (fifthsContainer && fifthsContainer.style.display !== 'none') {
-            scaleNotes.forEach(note => {
-                this.circleVisualizer.highlightNote(fifthsContainer, note, note === this.currentKey);
-            });
+            this.circleVisualizer.updateCircleHighlights(fifthsContainer, 'fifths', this.currentKey, this.currentScale);
         }
         
         if (chromaticContainer && chromaticContainer.style.display !== 'none') {
-            scaleNotes.forEach(note => {
-                this.circleVisualizer.highlightNote(chromaticContainer, note, note === this.currentKey);
-            });
+            this.circleVisualizer.updateCircleHighlights(chromaticContainer, 'chromatic', this.currentKey, this.currentScale);
         }
     }
     
     // Create the fretboard
     createFretboard() {
         console.log('Creating fretboard...');
+        // Set CSS variable for responsive fret sizing
+        document.documentElement.style.setProperty('--fret-count', this.numFrets);
+        
         const fretboard = document.getElementById('fretboard');
         if (!fretboard) {
             console.error('Fretboard element not found!');
@@ -568,10 +612,13 @@ class FretboardVisualizer {
             if (triad) {
                 const positions = this.triadVisualizer.findTriadPositions(triad, tuning, this.numFrets, this.triadMethod);
                 if (positions.length > 0 && Array.isArray(positions)) {
-                    // Show first position
+                    // Show first position with connection lines
                     this.triadVisualizer.highlightTriad(fretboard, positions[0], this.triadMethod);
                 }
             }
+        } else {
+            // Clear triad connections when triads are disabled
+            this.triadVisualizer.clearTriadConnections();
         }
         
         // Update circle highlights

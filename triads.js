@@ -236,51 +236,138 @@ class TriadVisualizer {
         return triads;
     }
     
-    // Highlight triad on fretboard
+    // Highlight triad on fretboard with connecting lines
     highlightTriad(fretboardElement, triad, visualizationMethod = 'connected') {
         const allFrets = fretboardElement.querySelectorAll('.fret');
         
+        // Clear previous highlighting
         allFrets.forEach(fret => {
             fret.classList.remove('triad-root', 'triad-third', 'triad-fifth', 'triad-connection');
-            
-            const stringIndex = parseInt(fret.getAttribute('data-string'));
-            const fretNum = parseInt(fret.getAttribute('data-fret'));
-            
-            if (triad.root.string === stringIndex && triad.root.fret === fretNum) {
-                fret.classList.add('triad-root');
-            } else if (triad.third.string === stringIndex && triad.third.fret === fretNum) {
-                fret.classList.add('triad-third');
-            } else if (triad.fifth.string === stringIndex && triad.fifth.fret === fretNum) {
-                fret.classList.add('triad-fifth');
-            }
         });
         
-        // Add connection lines for connected triads
-        if (visualizationMethod === 'connected' || visualizationMethod === 'close-voicing') {
-            this.addTriadConnections(fretboardElement, triad);
+        // Clear previous connection lines
+        this.clearTriadConnections();
+        
+        // Get fret positions
+        const rootFret = fretboardElement.querySelector(
+            `[data-string="${triad.root.string}"][data-fret="${triad.root.fret}"]`
+        );
+        const thirdFret = fretboardElement.querySelector(
+            `[data-string="${triad.third.string}"][data-fret="${triad.third.fret}"]`
+        );
+        const fifthFret = fretboardElement.querySelector(
+            `[data-string="${triad.fifth.string}"][data-fret="${triad.fifth.fret}"]`
+        );
+        
+        // Highlight notes
+        if (rootFret) {
+            rootFret.classList.add('triad-root');
+        }
+        if (thirdFret) {
+            thirdFret.classList.add('triad-third');
+        }
+        if (fifthFret) {
+            fifthFret.classList.add('triad-fifth');
+        }
+        
+        // Draw connecting lines
+        if (rootFret && thirdFret && fifthFret) {
+            this.drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement);
         }
     }
     
-    // Add visual connections between triad notes
-    addTriadConnections(fretboardElement, triad) {
-        // This would require SVG overlay or canvas for lines
-        // For now, we'll use CSS to create visual connections
-        const positions = [triad.root, triad.third, triad.fifth].sort((a, b) => {
-            if (a.string !== b.string) return a.string - b.string;
-            return a.fret - b.fret;
-        });
+    // Draw SVG lines connecting triad notes
+    drawTriadConnections(rootFret, thirdFret, fifthFret, fretboardElement) {
+        const container = fretboardElement.closest('.fretboard-container');
+        if (!container) return;
         
-        // Mark frets as part of connection
-        positions.forEach((pos, index) => {
-            if (index < positions.length - 1) {
-                const fret = fretboardElement.querySelector(
-                    `[data-string="${pos.string}"][data-fret="${pos.fret}"]`
-                );
-                if (fret) {
-                    fret.classList.add('triad-connection');
-                }
-            }
-        });
+        let svgOverlay = container.querySelector('#triad-connections');
+        if (!svgOverlay) {
+            svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgOverlay.id = 'triad-connections';
+            svgOverlay.className = 'triad-connections-overlay';
+            svgOverlay.style.position = 'absolute';
+            svgOverlay.style.top = '0';
+            svgOverlay.style.left = '0';
+            svgOverlay.style.width = '100%';
+            svgOverlay.style.height = '100%';
+            svgOverlay.style.pointerEvents = 'none';
+            svgOverlay.style.zIndex = '5';
+            container.style.position = 'relative';
+            container.appendChild(svgOverlay);
+        }
+        
+        // Clear previous lines
+        svgOverlay.innerHTML = '';
+        
+        // Get bounding boxes
+        const rootRect = rootFret.getBoundingClientRect();
+        const thirdRect = thirdFret.getBoundingClientRect();
+        const fifthRect = fifthFret.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calculate center points relative to container
+        const rootX = rootRect.left - containerRect.left + rootRect.width / 2;
+        const rootY = rootRect.top - containerRect.top + rootRect.height / 2;
+        const thirdX = thirdRect.left - containerRect.left + thirdRect.width / 2;
+        const thirdY = thirdRect.top - containerRect.top + thirdRect.height / 2;
+        const fifthX = fifthRect.left - containerRect.left + fifthRect.width / 2;
+        const fifthY = fifthRect.top - containerRect.top + fifthRect.height / 2;
+        
+        // Set SVG dimensions
+        svgOverlay.setAttribute('width', containerRect.width);
+        svgOverlay.setAttribute('height', containerRect.height);
+        
+        // Draw lines connecting the three notes
+        const positions = [
+            { x: rootX, y: rootY, note: 'root' },
+            { x: thirdX, y: thirdY, note: 'third' },
+            { x: fifthX, y: fifthY, note: 'fifth' }
+        ];
+        
+        // Connect root to third
+        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line1.setAttribute('x1', rootX);
+        line1.setAttribute('y1', rootY);
+        line1.setAttribute('x2', thirdX);
+        line1.setAttribute('y2', thirdY);
+        line1.setAttribute('stroke', '#f39c12');
+        line1.setAttribute('stroke-width', '3');
+        line1.setAttribute('stroke-linecap', 'round');
+        line1.setAttribute('opacity', '0.7');
+        svgOverlay.appendChild(line1);
+        
+        // Connect third to fifth
+        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line2.setAttribute('x1', thirdX);
+        line2.setAttribute('y1', thirdY);
+        line2.setAttribute('x2', fifthX);
+        line2.setAttribute('y2', fifthY);
+        line2.setAttribute('stroke', '#f39c12');
+        line2.setAttribute('stroke-width', '3');
+        line2.setAttribute('stroke-linecap', 'round');
+        line2.setAttribute('opacity', '0.7');
+        svgOverlay.appendChild(line2);
+        
+        // Connect fifth back to root (triangle)
+        const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line3.setAttribute('x1', fifthX);
+        line3.setAttribute('y1', fifthY);
+        line3.setAttribute('x2', rootX);
+        line3.setAttribute('y2', rootY);
+        line3.setAttribute('stroke', '#f39c12');
+        line3.setAttribute('stroke-width', '3');
+        line3.setAttribute('stroke-linecap', 'round');
+        line3.setAttribute('opacity', '0.7');
+        svgOverlay.appendChild(line3);
+    }
+    
+    // Clear triad connection lines
+    clearTriadConnections() {
+        const svgOverlay = document.getElementById('triad-connections');
+        if (svgOverlay) {
+            svgOverlay.innerHTML = '';
+        }
     }
     
     // Clear triad highlighting
@@ -289,5 +376,6 @@ class TriadVisualizer {
         allFrets.forEach(fret => {
             fret.classList.remove('triad-root', 'triad-third', 'triad-fifth', 'triad-connection');
         });
+        this.clearTriadConnections();
     }
 }

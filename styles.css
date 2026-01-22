@@ -227,8 +227,28 @@ h1 {
 }
 
 .fretboard-container {
-    overflow-x: auto;
-    padding: 20px 0;
+    overflow: hidden;
+    padding: 10px 0;
+    position: relative;
+    width: 100%;
+}
+
+.fretboard {
+    width: 100%;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Triad Connection Lines Overlay */
+.triad-connections-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
 }
 
 .fretboard {
@@ -245,6 +265,7 @@ h1 {
     display: flex;
     gap: 2px;
     align-items: center;
+    width: 100%;
 }
 
 .string-label {
@@ -256,8 +277,11 @@ h1 {
 }
 
 .fret {
-    width: 50px;
-    height: 50px;
+    min-width: 35px;
+    width: calc((100% - 60px) / var(--fret-count, 20));
+    max-width: 50px;
+    aspect-ratio: 1;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -520,18 +544,36 @@ h1 {
     display: block;
     color: #333;
     font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.settings-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 1em;
+    color: #333;
+    background: white;
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
     margin-bottom: 10px;
     font-size: 0.95em;
 }
 
-/* Feature Toggles Bar - Horizontal above fretboard */
+/* Feature Toggles Bar - Horizontal directly above fretboard */
 .feature-toggles-bar {
     display: flex;
     gap: 15px;
-    padding: 15px 20px;
+    padding: 12px 20px;
     background: #f8f9fa;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
@@ -670,6 +712,28 @@ h1 {
     fill: #fff3cd !important;
     stroke: #ffc107 !important;
     stroke-width: 4 !important;
+}
+
+.circle-note-group {
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.circle-note-group:hover .circle-note {
+    stroke-width: 3 !important;
+    filter: brightness(1.1);
+}
+
+.circle-note-group:hover {
+    transform: scale(1.1);
+}
+
+.circle-degree {
+    font-weight: 600;
+}
+
+.interactive-circle .circle-note {
+    transition: all 0.2s;
 }
 
 /* Chord Highlighting */
@@ -1120,14 +1184,28 @@ h1 {
 /* Responsive */
 @media (max-width: 768px) {
     .fret {
-        width: 40px;
-        height: 40px;
+        min-width: 30px;
+        max-width: 40px;
         font-size: 0.8em;
     }
     
     .string-label {
         width: 30px;
         font-size: 0.9em;
+    }
+    
+    .legend-container-bottom {
+        max-height: none;
+        padding: 6px 10px;
+    }
+    
+    .legend-label-compact {
+        font-size: 0.65em;
+    }
+    
+    .legend-color-box-compact {
+        width: 12px;
+        height: 12px;
     }
     
     .button-group {
@@ -1163,28 +1241,71 @@ h1 {
         justify-content: center;
     }
     
-    .chord-selection-bar {
+    .bottom-controls-bar {
         flex-direction: column;
-        gap: 10px;
+        gap: 15px;
     }
     
-    .chord-select {
+    .control-item {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .control-select-small {
         width: 100%;
         min-width: auto;
     }
     
-    .triad-controls-bar {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .triad-select {
-        width: 100%;
-        min-width: auto;
+    .legend-container-bottom {
+        max-height: 150px;
     }
 }
 
-/* Legend Styles */
+/* Legend Styles - Below fretboard - Compact */
+.legend-container-bottom {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 8px 12px;
+    width: 100%;
+    overflow: visible;
+}
+
+.legend-content-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.legend-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: help;
+}
+
+.legend-color-box-compact {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1.5px solid;
+    flex-shrink: 0;
+}
+
+.legend-label-compact {
+    font-size: 0.7em;
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 .legend-container {
     position: fixed;
     bottom: 20px;
@@ -1211,6 +1332,10 @@ h1 {
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+.legend-container-bottom .legend-header {
+    border-radius: 12px 12px 0 0;
 }
 
 .legend-header h4 {

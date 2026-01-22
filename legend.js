@@ -35,32 +35,32 @@ class LegendManager {
                 description: 'The root note of the selected chord. This is the fundamental note that gives the chord its name.'
             },
             'interval-2nd': {
-                label: '2nd Interval',
+                label: '2nd',
                 color: '#17a2b8',
                 description: 'A second interval from the root (major or minor second). Creates stepwise motion.'
             },
             'interval-3rd': {
-                label: '3rd Interval',
+                label: '3rd',
                 color: '#28a745',
                 description: 'A third interval from the root (major or minor third). Defines chord quality (major/minor).'
             },
             'interval-4th': {
-                label: '4th Interval',
+                label: '4th',
                 color: '#ffc107',
                 description: 'A perfect fourth interval from the root. Creates a stable, consonant sound.'
             },
             'interval-5th': {
-                label: '5th Interval',
+                label: '5th',
                 color: '#007bff',
                 description: 'A perfect fifth interval from the root. The most consonant interval after the octave.'
             },
             'interval-6th': {
-                label: '6th Interval',
+                label: '6th',
                 color: '#6f42c1',
                 description: 'A sixth interval from the root (major or minor sixth). Adds color to melodies.'
             },
             'interval-7th': {
-                label: '7th Interval',
+                label: '7th',
                 color: '#fd7e14',
                 description: 'A seventh interval from the root (major or minor seventh). Creates tension and resolution.'
             },
@@ -136,10 +136,21 @@ class LegendManager {
     
     // Create legend container
     createLegendContainer() {
-        this.legendContainer = document.createElement('div');
-        this.legendContainer.id = 'legend-container';
-        this.legendContainer.className = 'legend-container';
-        document.body.appendChild(this.legendContainer);
+        // Find the fretboard container to place legend below it
+        const fretboardContainer = document.querySelector('.fretboard-container');
+        if (!fretboardContainer) {
+            // Fallback to body if container not found
+            this.legendContainer = document.createElement('div');
+            this.legendContainer.id = 'legend-container';
+            this.legendContainer.className = 'legend-container-bottom';
+            document.body.appendChild(this.legendContainer);
+        } else {
+            // Insert after fretboard container
+            this.legendContainer = document.createElement('div');
+            this.legendContainer.id = 'legend-container';
+            this.legendContainer.className = 'legend-container-bottom';
+            fretboardContainer.parentNode.insertBefore(this.legendContainer, fretboardContainer.nextSibling);
+        }
     }
     
     // Update legend based on active visualizations
@@ -164,29 +175,16 @@ class LegendManager {
         }
         
         this.legendContainer.style.display = 'block';
+        
+        // Check if it's the bottom legend (no toggle needed)
+        const isBottomLegend = this.legendContainer.classList.contains('legend-container-bottom');
+        
+        // Compact legend - no header, just items in a row
         this.legendContainer.innerHTML = `
-            <div class="legend-header">
-                <h4>Legend</h4>
-                <button class="legend-toggle" id="legend-toggle">−</button>
-            </div>
-            <div class="legend-content" id="legend-content">
+            <div class="legend-content-compact" id="legend-content">
                 ${activeItems.map(item => this.createLegendItem(item)).join('')}
             </div>
         `;
-        
-        // Setup toggle
-        const toggle = document.getElementById('legend-toggle');
-        const content = document.getElementById('legend-content');
-        if (toggle && content) {
-            toggle.addEventListener('click', () => {
-                const isCollapsed = content.style.display === 'none';
-                content.style.display = isCollapsed ? 'block' : 'none';
-                toggle.textContent = isCollapsed ? '−' : '+';
-            });
-        }
-        
-        // Setup tooltips
-        this.setupTooltips();
     }
     
     // Create a legend item
@@ -195,41 +193,16 @@ class LegendManager {
         if (!item) return '';
         
         return `
-            <div class="legend-item" data-item="${itemKey}">
-                <div class="legend-color-box" 
+            <div class="legend-item-compact" data-item="${itemKey}" title="${item.description}">
+                <div class="legend-color-box-compact" 
                      style="background: ${item.color || '#fff'}; border-color: ${item.borderColor || item.color || '#333'};">
                 </div>
-                <span class="legend-label">${item.label}</span>
-                <div class="legend-tooltip">
-                    <div class="tooltip-content">
-                        <strong>${item.label}</strong>
-                        <p>${item.description}</p>
-                    </div>
-                </div>
+                <span class="legend-label-compact">${item.label}</span>
             </div>
         `;
     }
     
-    // Setup tooltips for legend items
-    setupTooltips() {
-        const items = this.legendContainer.querySelectorAll('.legend-item');
-        items.forEach(item => {
-            const tooltip = item.querySelector('.legend-tooltip');
-            
-            item.addEventListener('mouseenter', () => {
-                tooltip.style.display = 'block';
-            });
-            
-            item.addEventListener('mouseleave', () => {
-                tooltip.style.display = 'none';
-            });
-            
-            item.addEventListener('click', () => {
-                const isVisible = tooltip.style.display === 'block';
-                tooltip.style.display = isVisible ? 'none' : 'block';
-            });
-        });
-    }
+    // Setup tooltips for legend items (using title attribute now, so no need for custom tooltips)
     
     // Get active classes from fretboard
     getActiveClasses(fretboardElement) {
